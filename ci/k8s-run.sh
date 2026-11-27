@@ -2,6 +2,8 @@
 # Deploy the demo app to the kind cluster and run the Playwright suite as a Job.
 # Expects the images tagged :ci and loaded, and /tmp/k8s-out shared with the node.
 set -euo pipefail
+diagnose() { kubectl -n showcase get all,events 2>/dev/null | tail -40; kubectl -n showcase describe pods 2>/dev/null | tail -60; }
+trap 'code=$?; [ $code -ne 0 ] && diagnose; exit $code' EXIT
 REG="${REGISTRY:-ghcr.io/lana-20}"
 kind load docker-image "$REG/test-showcase-demo-app:ci" "$REG/test-showcase-playwright:ci" --name showcase
 

@@ -27,6 +27,11 @@ RUN chown tester:tester /work
 COPY --chown=tester:tester ci/ ci/
 COPY --chown=tester:tester demo-app/ demo-app/
 COPY --chown=tester:tester suites/${SUITE}/ suites/${SUITE}/
+# Chrome's own sandbox needs unprivileged user namespaces, which Docker on
+# Ubuntu 24.04 hosts blocks. The container is the isolation boundary here, so
+# turn Chrome's sandbox off (Playwright's Chromium does the same by default).
+# Vibium leaves this as an explicit choice rather than doing it silently.
+ENV VIBIUM_CHROME_ARGS=--no-sandbox
 ARG IMAGE_REF=""
 ENV SHOWCASE_IMAGE=${IMAGE_REF}
 USER tester

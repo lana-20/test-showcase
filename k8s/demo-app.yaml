@@ -16,6 +16,7 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000     # the image's "node" user; numeric so Kubernetes can verify it is not root
       containers:
         - name: demo-app
           # Loaded into kind from the CI build (kind load docker-image), so no registry pull.

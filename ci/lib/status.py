@@ -20,6 +20,11 @@ import pathlib
 
 def detect_ci() -> dict:
     env = os.environ
+    if env.get("RAN_ON_NAME"):  # e.g. a Kernel cloud browser or Firebase Test Lab, driven from a CI
+        url = env.get("RAN_ON_URL")
+        if not url and env.get("GITHUB_RUN_ID"):
+            url = f"{env['GITHUB_SERVER_URL']}/{env['GITHUB_REPOSITORY']}/actions/runs/{env['GITHUB_RUN_ID']}"
+        return {"id": env.get("RAN_ON_ID", "other"), "name": env["RAN_ON_NAME"], "url": url}
     host = env.get("HOST_CI_NAME")  # set when a CI runs inside another (Jenkins in GHA, kind in GHA)
     host_url = env.get("HOST_RUN_URL")
     if env.get("KUBERNETES_SERVICE_HOST"):

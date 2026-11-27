@@ -14,6 +14,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: playwright
+          # Runs as the image's non-root pwuser.
           image: ghcr.io/lana-20/test-showcase-playwright:ci
           imagePullPolicy: IfNotPresent
           env:

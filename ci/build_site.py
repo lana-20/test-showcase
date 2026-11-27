@@ -30,12 +30,14 @@ HISTORY_FILES = ["history.json", "history-trend.json", "duration-trend.json",
                  "categories-trend.json", "retry-trend.json"]
 
 
-def report_ids(config: dict) -> list[tuple[str, str]]:
+def report_ids(config: dict) -> list[tuple[str, str, bool]]:
+    """(id, title, optional). Optional runs (cloud legs that need an account)
+    are left out entirely until they have produced a result."""
     ids = []
     for s in config["suites"]:
-        ids.append((s["id"], s["title"]))
+        ids.append((s["id"], s["title"], False))
         for x in s.get("extra", []):
-            ids.append((x["id"], x["label"]))
+            ids.append((x["id"], x["label"], bool(x.get("optional"))))
     return ids
 
 
@@ -129,13 +131,20 @@ def main() -> int:
     status_out.mkdir(parents=True, exist_ok=True)
 
     summary = []
-    for rid, title in report_ids(config):
+    parent_of = {x["id"]: s["id"] for s in config["suites"] for x in s.get("extra", [])}
+    # A public copy of the demo app, for cloud browsers that cannot reach a CI runner.
+    shutil.copytree(REPO / "demo-app", args.out / "demo")
+
+    for rid, title, optional in report_ids(config):
         results = args.collected / "allure-results" / rid
         status_file = args.collected / "status" / f"{rid}.json"
         status = json.loads(status_file.read_text(encoding="utf-8")) if status_file.exists() else None
         report_dir = args.out / "reports" / rid
         has_results = results.is_dir() and any(results.glob("*-result.json"))
 
+        if status is None and not has_results and optional:
+            summary.append(f"{rid}: not run (optional, pending account)")
+            continue
         if status is None:
             # The job never reached the run script (for example, the emulator did not boot).
             status = {
@@ -154,7 +163,7 @@ def main() -> int:
             write_executor(results, status, args.live, rid)
             subprocess.run([args.allure, "generate", str(results), "-o", str(report_dir), "--clean",
                             "--name", f"{title} · test-showcase"], check=True)
-            add_back_bar(report_dir / "index.html", title, rid.replace("-k8s", ""))
+            add_back_bar(report_dir / "index.html", title, parent_of.get(rid, rid))
             summary.append(f"{rid}: report generated ({restored} history files restored)")
         else:
             placeholder(report_dir, title, status.get("note") or "This run produced no test results. The CI log has the details.")

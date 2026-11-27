@@ -14,5 +14,4 @@ mkdir -p "$HOME/.m2"
 docker run --rm --network host \
   -v "$REPO:/workspace" -v "$HOME/.m2:/root/.m2" \
   -e HOST_CI_NAME="GitHub Actions" -e HOST_RUN_URL="${RUN_URL:-}" -e GIT_COMMIT="${GITHUB_SHA:-}" \
-  "${JENKINS_IMAGE:?set JENKINS_IMAGE}" \
-  -f /workspace/Jenkinsfile
+  "${JENKINS_IMAGE:?set JENKINS_IMAGE}"     # the launcher runs /workspace/Jenkinsfile
