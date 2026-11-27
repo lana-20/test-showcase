@@ -33,11 +33,13 @@ for _ in $(seq 1 60); do
   sleep 5
 done
 [ "$nodes" = "3" ]
-printf '%s' "$status" | python3 -c '
+printf '%s' "$status" | python3 -c "$(cat <<'PY'
 import json, sys
 for n in json.load(sys.stdin)["value"]["nodes"]:
     s = n["slots"][0]["stereotype"]
-    print(f"  {s.get(\"browserName\")} {s.get(\"browserVersion\")}: {len(n[\"slots\"])} slots, {n[\"availability\"]}")'
+    print("  %s %s: %d slots, %s" % (s.get("browserName"), s.get("browserVersion"), len(n["slots"]), n["availability"]))
+PY
+)"
 
 kubectl -n $NS delete job selenium-bidi --ignore-not-found
 kubectl apply -f k8s/selenium-bidi-job.yaml
