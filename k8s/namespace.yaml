@@ -1,0 +1,5 @@
+# A namespace keeps everything for the showcase together and easy to delete.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: showcase

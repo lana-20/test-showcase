@@ -1,0 +1,318 @@
+# Builds the images, runs every suite, gathers results from every CI,
+# generates one Allure report per suite and deploys the site to Pages.
+#
+# Where each suite runs (repository variables switch a suite to its own CI
+# once that account is connected; see SETUP.md):
+#   Playwright      GitHub Actions (plus a Kubernetes Job on kind)
+#   Vibium Python   GitLab CI        when vars.VIBIUM_PYTHON_CI == 'gitlab-ci'
+#   Appium Java     Jenkins          (Jenkinsfile Runner inside this workflow)
+#   Vibium MCP      Azure Pipelines  when vars.VIBIUM_MCP_CI == 'azure-pipelines'
+#   Mobium          CircleCI         when vars.MOBIUM_CI == 'circleci'
+# Until then, the suite runs here, from the same script and image, and the
+# page says so.
+name: Showcase
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * *"   # nightly, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: showcase-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/lana-20
+  TAG: ${{ github.sha }}
+
+jobs:
+  images:
+    name: Image · ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: demo-app
+            dockerfile: docker/demo-app.Dockerfile
+            suite: ""
+          - name: playwright
+            dockerfile: docker/playwright.Dockerfile
+            suite: ""
+          - name: vibium-python
+            dockerfile: docker/vibium.Dockerfile
+            suite: vibium-python
+          - name: vibium-mcp
+            dockerfile: docker/vibium.Dockerfile
+            suite: vibium-mcp
+          - name: jenkins-runner
+            dockerfile: ci/jenkins/Dockerfile
+            suite: ""
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/setup-buildx-action@v4.4.1
+      - uses: docker/login-action@v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          build-args: |
+            SUITE=${{ matrix.suite }}
+            IMAGE_REF=${{ env.REGISTRY }}/test-showcase-${{ matrix.name }}:${{ env.TAG }}
+          tags: |
+            ${{ env.REGISTRY }}/test-showcase-${{ matrix.name }}:${{ env.TAG }}
+            ${{ env.REGISTRY }}/test-showcase-${{ matrix.name }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.description=test-showcase ${{ matrix.name }}
+            org.opencontainers.image.licenses=MIT
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  # ---------- Web suites: same image as every other CI ----------
+  playwright:
+    name: Playwright · GitHub Actions
+    needs: images
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: { contents: read, packages: read }
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/login-action@v4.8.0
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - name: Run the suite in its image
+        run: ci/docker-run.sh playwright --ipc=host
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with: { name: results-playwright, path: out/, if-no-files-found: warn, retention-days: 14 }
+
+  vibium-python:
+    name: Vibium Python · GitHub Actions (GitLab CI when connected)
+    needs: images
+    if: vars.VIBIUM_PYTHON_CI != 'gitlab-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: { contents: read, packages: read }
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/login-action@v4.8.0
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - run: ci/docker-run.sh vibium-python --shm-size=1g
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with: { name: results-vibium-python, path: out/, if-no-files-found: warn, retention-days: 14 }
+
+  vibium-mcp:
+    name: Vibium MCP · GitHub Actions (Azure Pipelines when connected)
+    needs: images
+    if: vars.VIBIUM_MCP_CI != 'azure-pipelines'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: { contents: read, packages: read }
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/login-action@v4.8.0
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - run: ci/docker-run.sh vibium-mcp --shm-size=1g
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with: { name: results-vibium-mcp, path: out/, if-no-files-found: warn, retention-days: 14 }
+
+  # ---------- Kubernetes: the Playwright image as a Job on kind ----------
+  kubernetes:
+    name: Playwright · Kubernetes (kind)
+    needs: images
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions: { contents: read, packages: read }
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/login-action@v4.8.0
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - name: Pull this build's images and tag them for the cluster
+        run: |
+          mkdir -p /tmp/k8s-out && chmod 777 /tmp/k8s-out
+          for img in demo-app playwright; do
+            docker pull "$REGISTRY/test-showcase-$img:$TAG"
+            docker tag "$REGISTRY/test-showcase-$img:$TAG" "$REGISTRY/test-showcase-$img:ci"
+          done
+      - uses: helm/kind-action@v1.15.2
+        with:
+          cluster_name: showcase
+          config: k8s/kind-config.yaml
+      - name: Deploy the demo app and run the Playwright Job
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: ci/k8s-run.sh
+      - name: Collect results
+        if: always()
+        run: |
+          mkdir -p out && cp -r /tmp/k8s-out/. out/ || true
+          ls -R out | head -20
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with: { name: results-playwright-k8s, path: out/, if-no-files-found: warn, retention-days: 14 }
+
+  # ---------- Android: emulator on the runner (KVM) ----------
+  appium-jenkins:
+    name: Appium Java · Jenkins (Jenkinsfile Runner)
+    needs: images
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions: { contents: read, packages: read }
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/login-action@v4.8.0
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - name: Enable KVM
+        run: ci/android/enable-kvm.sh
+      - uses: actions/setup-node@v7.1.0
+        with: { node-version: "24" }
+      - name: Install Appium and the UiAutomator2 driver
+        run: |
+          npm install -g appium@4.0.1
+          appium driver install uiautomator2@10.4.0
+      - name: Download ApiDemos
+        run: ci/android/fetch-apk.sh
+      - name: Pull the Jenkins runner image
+        run: docker pull "$REGISTRY/test-showcase-jenkins-runner:$TAG"
+      - uses: actions/cache@v6.1.0
+        with:
+          path: ~/.m2/repository
+          key: m2-${{ hashFiles('suites/appium-java/pom.xml') }}
+      - name: Boot the emulator, start Appium, run the Jenkinsfile
+        uses: ReactiveCircus/android-emulator-runner@v2.38.0
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          JENKINS_IMAGE: ${{ env.REGISTRY }}/test-showcase-jenkins-runner:${{ env.TAG }}
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disk-size: 6000M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash ci/jenkins/run-on-host.sh
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with: { name: results-appium-java, path: out/, if-no-files-found: warn, retention-days: 14 }
+
+  mobium:
+    name: Mobium · GitHub Actions (CircleCI when connected)
+    if: vars.MOBIUM_CI != 'circleci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Enable KVM
+        run: ci/android/enable-kvm.sh
+      - uses: actions/setup-python@v7.1.0
+        with: { python-version: "3.12" }
+      - name: Install Mobium (pinned release) and the Python client
+        run: |
+          ci/android/install-mobium.sh
+          pip install -r suites/mobium/requirements.txt
+          ci/android/fetch-apk.sh
+      - name: Boot the emulator and run the Mobium suite
+        uses: ReactiveCircus/android-emulator-runner@v2.38.0
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disk-size: 6000M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash ci/run-mobium.sh
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with: { name: results-mobium, path: out/, if-no-files-found: warn, retention-days: 14 }
+
+  # ---------- Mirror to GitLab (pull mirroring is a paid GitLab feature) ----------
+  gitlab-mirror:
+    name: Mirror main to GitLab
+    if: github.event_name == 'push' && vars.GITLAB_PROJECT != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with: { fetch-depth: 0 }
+      - name: Push main
+        env:
+          GITLAB_PUSH_TOKEN: ${{ secrets.GITLAB_PUSH_TOKEN }}
+          GITLAB_PROJECT: ${{ vars.GITLAB_PROJECT }}
+        run: |
+          if [ -z "$GITLAB_PUSH_TOKEN" ]; then echo "GITLAB_PUSH_TOKEN is not set; skipping."; exit 0; fi
+          git push --force "https://oauth2:${GITLAB_PUSH_TOKEN}@gitlab.com/${GITLAB_PROJECT}.git" HEAD:main
+
+  # ---------- Reports and Pages ----------
+  report:
+    name: Allure reports and site
+    needs: [playwright, vibium-python, vibium-mcp, kubernetes, appium-jenkins, mobium]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          pattern: results-*
+          merge-multiple: true
+          path: collected
+      - name: Fetch results from the other CIs (when connected)
+        env:
+          VIBIUM_PYTHON_CI: ${{ vars.VIBIUM_PYTHON_CI }}
+          VIBIUM_MCP_CI: ${{ vars.VIBIUM_MCP_CI }}
+          MOBIUM_CI: ${{ vars.MOBIUM_CI }}
+          GITLAB_PROJECT: ${{ vars.GITLAB_PROJECT }}
+          GITLAB_READ_TOKEN: ${{ secrets.GITLAB_READ_TOKEN || secrets.GITLAB_PUSH_TOKEN }}
+          AZURE_DEVOPS_ORG: ${{ vars.AZURE_DEVOPS_ORG }}
+          AZURE_DEVOPS_PROJECT: ${{ vars.AZURE_DEVOPS_PROJECT }}
+          AZURE_DEVOPS_TOKEN: ${{ secrets.AZURE_DEVOPS_TOKEN }}
+          CIRCLECI_TOKEN: ${{ secrets.CIRCLECI_TOKEN }}
+        run: python3 ci/fetch_external.py --into collected
+      - uses: actions/setup-java@v6.3.0
+        with: { distribution: temurin, java-version: "21" }
+      - name: Install Allure 2 commandline
+        run: npm install -g allure-commandline@2.46.2
+      - name: Generate reports and build the site
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 ci/build_site.py --collected collected --out _site
+      - name: Summary
+        if: always()
+        run: python3 ci/summary.py collected/status >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/configure-pages@v6.0.0
+      - uses: actions/upload-pages-artifact@v5.0.0
+        with: { path: _site }
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: report
+    if: always() && needs.report.result == 'success' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5.0.1

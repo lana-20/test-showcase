@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tidepool · Catalog</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <nav class="topbar">
+    <strong>Tidepool</strong>
+    <a href="board.html">Tasks</a>
+    <a href="catalog.html" aria-current="page">Catalog</a>
+    <span id="greeting" data-testid="greeting"></span>
+    <button id="sign-out" data-testid="sign-out" class="link">Sign out</button>
+  </nav>
+  <main class="card wide" aria-labelledby="title">
+    <h1 id="title">Device catalog</h1>
+    <label for="search">Search devices</label>
+    <input id="search" type="search" data-testid="search" placeholder="Search by name or platform">
+    <label for="platform">Platform</label>
+    <select id="platform" data-testid="platform">
+      <option value="">Any</option>
+      <option value="android">Android</option>
+      <option value="ios">iOS</option>
+    </select>
+    <p id="status" data-testid="status" aria-live="polite">Loading…</p>
+    <ul id="results" data-testid="results" aria-label="Results"></ul>
+    <section id="cart" aria-label="Lab cart">
+      <h2>Lab cart <span id="cart-count" data-testid="cart-count">0</span></h2>
+      <button id="checkout" data-testid="checkout" disabled>Reserve devices</button>
+      <p id="confirmation" role="status" data-testid="confirmation" hidden></p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

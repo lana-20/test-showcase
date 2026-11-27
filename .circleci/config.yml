@@ -1,0 +1,49 @@
+# Mobium on CircleCI: an Android machine image boots an emulator, and the
+# Mobium Python client drives ApiDemos on it. The emulator needs KVM, which
+# CircleCI's Android machine images have (GitLab's hosted runners do not).
+# Runs on pushes to main and on a nightly scheduled pipeline (set it up in
+# Project Settings > Triggers; see SETUP.md).
+version: 2.1
+
+orbs:
+  android: circleci/android@3.2.0
+
+jobs:
+  mobium:
+    executor:
+      name: android/android_machine
+      tag: 2026.10.1
+      resource_class: large
+    environment:
+      OUT_DIR: /home/circleci/project/out
+      ANDROID_SERIAL: emulator-5554
+    steps:
+      - checkout
+      - android/create_avd:
+          avd_name: mobium
+          install: true
+          system_image: system-images;android-35;google_apis;x86_64
+          additional_args: --device pixel_6
+      - android/start_emulator:
+          avd_name: mobium
+          no_window: true
+          disable_animations: true
+          post_emulator_launch_assemble_command: ""   # no Gradle project to build here
+          restore_gradle_cache_post_emulator_launch: false
+      - run:
+          name: Run the Mobium suite
+          command: |
+            python3 -m venv .venv && . .venv/bin/activate
+            pip install -q -r suites/mobium/requirements.txt
+            PYTHON=python ci/run-mobium.sh
+      - store_artifacts:
+          path: out
+          destination: out
+      - android/kill_emulators
+
+workflows:
+  mobium:
+    when:
+      equal: [main, << pipeline.git.branch >>]
+    jobs:
+      - mobium

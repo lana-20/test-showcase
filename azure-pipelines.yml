@@ -1,0 +1,42 @@
+# Vibium MCP server suite on Azure Pipelines (Microsoft-hosted ubuntu-latest).
+# Runs on pushes to main and nightly, inside the same image GitHub Actions
+# publishes, then publishes out/ (allure-results + status JSON) as the
+# "vibium-mcp" pipeline artifact. The GitHub Pages workflow downloads it.
+
+trigger:
+  branches:
+    include: [main]
+
+pr: none
+
+schedules:
+  - cron: "30 7 * * *"          # 07:30 UTC, after the GitHub Actions nightly
+    displayName: Nightly
+    branches:
+      include: [main]
+    always: true
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  IMAGE: ghcr.io/lana-20/test-showcase-vibium-mcp:latest
+
+steps:
+  - checkout: self
+    fetchDepth: 1
+
+  - script: |
+      set -euo pipefail
+      mkdir -p out && chmod 777 out
+      # Pass through the variables ci/lib/status.py uses to name this CI.
+      docker run --rm \
+        -e TF_BUILD -e SYSTEM_COLLECTIONURI -e SYSTEM_TEAMPROJECT -e BUILD_BUILDID -e BUILD_SOURCEVERSION \
+        -e OUT_DIR=/work/out -v "$PWD/out:/work/out" \
+        "$(IMAGE)"
+    displayName: Run Vibium MCP suite in the published image
+
+  - publish: out
+    artifact: vibium-mcp
+    displayName: Publish allure-results and status
+    condition: always()

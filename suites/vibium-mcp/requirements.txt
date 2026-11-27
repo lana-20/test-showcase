@@ -1,0 +1,5 @@
+vibium==26.11.16
+mcp==2.3.0
+pytest==9.2.0
+pytest-asyncio==1.5.0
+allure-pytest==2.16.2

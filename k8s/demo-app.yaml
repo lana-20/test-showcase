@@ -1,0 +1,43 @@
+# The demo web app: a Deployment keeps one pod running, and a Service gives
+# it a stable in-cluster name, http://demo-app (port 80 -> container 8080).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  namespace: showcase
+  labels: { app: demo-app }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: demo-app }
+  template:
+    metadata:
+      labels: { app: demo-app }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: demo-app
+          # Loaded into kind from the CI build (kind load docker-image), so no registry pull.
+          image: ghcr.io/lana-20/test-showcase-demo-app:ci
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          # Kubernetes only sends traffic once this succeeds.
+          readinessProbe:
+            httpGet: { path: /index.html, port: 8080 }
+            periodSeconds: 2
+          resources:
+            requests: { cpu: 50m, memory: 32Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app
+  namespace: showcase
+spec:
+  selector: { app: demo-app }
+  ports:
+    - port: 80
+      targetPort: 8080

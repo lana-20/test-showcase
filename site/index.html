@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lana Begunova · SDET: Mobile, Web and AI Test Automation</title>
+  <meta name="description" content="Lana Begunova, SDET. Five live test suites (Playwright, Vibium, Appium, Vibium MCP and Mobium) running on five CI systems, with Allure reports.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="hero" aria-labelledby="name">
+    <canvas id="waves" aria-hidden="true"></canvas>
+    <div class="hero-text">
+      <p class="eyebrow">SDET · Seattle</p>
+      <h1 id="name">Lana Begunova</h1>
+      <p class="role">Mobile, Web and AI Test Automation</p>
+      <ul class="hero-links" aria-label="Profiles">
+        <li><a href="https://github.com/lana-20">GitHub</a></li>
+        <li><a href="https://www.linkedin.com/in/lanabegunova">LinkedIn</a></li>
+        <li><a href="reports/">All test reports</a></li>
+      </ul>
+    </div>
+    <ul class="hero-static" aria-hidden="true"></ul>
+  </header>
+
+  <main id="main">
+    <section class="glance" aria-labelledby="glance-title">
+      <div class="wrap">
+        <h2 id="glance-title" class="section-title">Tools at a glance</h2>
+        <p class="hint">Linked tools have a live suite below.</p>
+        <div class="glance-grid">
+          <div class="group">
+            <h3>Mobile</h3>
+            <ul class="chips">
+              <li><a class="chip" href="#appium-java">Appium</a></li>
+              <li><span class="chip">XCUITest</span></li>
+              <li><span class="chip">Espresso</span></li>
+              <li><a class="chip" href="#appium-java">UiAutomator2</a></li>
+              <li><a class="chip" href="#mobium">Mobium</a></li>
+            </ul>
+          </div>
+          <div class="group">
+            <h3>Web</h3>
+            <ul class="chips">
+              <li><a class="chip" href="#playwright">Playwright</a></li>
+              <li><span class="chip">Selenium WebDriver BiDi</span></li>
+              <li><a class="chip" href="#vibium-python">Vibium</a></li>
+            </ul>
+          </div>
+          <div class="group">
+            <h3>AI and agents</h3>
+            <ul class="chips">
+              <li><a class="chip" href="#vibium-mcp">MCP</a></li>
+              <li><span class="chip">AI agents</span></li>
+              <li><span class="chip">LLM evals</span></li>
+              <li><span class="chip">LLM-as-judge</span></li>
+              <li><span class="chip">RAG quality gates</span></li>
+              <li><span class="chip">Prompt A/B tests</span></li>
+              <li><span class="chip">Red-teaming</span></li>
+            </ul>
+          </div>
+          <div class="group">
+            <h3>Languages</h3>
+            <ul class="chips">
+              <li><a class="chip" href="#playwright">JavaScript/TypeScript</a></li>
+              <li><a class="chip" href="#vibium-python">Python</a></li>
+              <li><a class="chip" href="#appium-java">Java</a></li>
+              <li><span class="chip">Go</span></li>
+            </ul>
+          </div>
+          <div class="group">
+            <h3>CI and reporting</h3>
+            <ul class="chips">
+              <li><a class="chip" href="#playwright">GitHub Actions</a></li>
+              <li><a class="chip" href="#vibium-python">GitLab CI</a></li>
+              <li><a class="chip" href="#appium-java">Jenkins</a></li>
+              <li><a class="chip" href="#vibium-mcp">Azure Pipelines</a></li>
+              <li><a class="chip" href="#mobium">CircleCI</a></li>
+              <li><a class="chip" href="reports/">Allure</a></li>
+            </ul>
+          </div>
+          <div class="group">
+            <h3>Containers and orchestration</h3>
+            <ul class="chips">
+              <li><a class="chip" href="#how">Docker</a></li>
+              <li><a class="chip" href="#how">Docker Compose</a></li>
+              <li><a class="chip" href="#playwright">Kubernetes (kind)</a></li>
+              <li><a class="chip" href="#how">GHCR</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="profile" aria-labelledby="about-title">
+      <div class="wrap two-col">
+        <div>
+          <h2 id="about-title" class="section-title">About</h2>
+          <p class="lead">SDET with 8 years of web and mobile test automation.</p>
+          <p>
+            I created <a href="https://github.com/mobiumdev/mobium">Mobium</a>, open-source mobile app automation
+            for AI agents and humans. One Go binary drives Android and iOS apps on emulators, simulators and real
+            phones, through a CLI, an MCP server and client libraries. I built its LLM evals:
+          </p>
+          <ul class="facts">
+            <li>a RAG quality gate over 82 reviewed questions</li>
+            <li>an LLM-as-judge study of agreement with human labels against run-to-run stability</li>
+            <li>agent evals with prompt A/B tests and prompt-injection red-team tasks</li>
+          </ul>
+          <p>
+            I contribute code to <a href="https://github.com/VibiumDev/vibium">Vibium</a>, “the verification layer for
+            coding agents”: 4 merged PRs, 50+ root-caused issues filed, and regression suites for its clients, CLI and
+            MCP server.
+          </p>
+        </div>
+        <div>
+          <h2 class="section-title">Talks and writing</h2>
+          <ul class="talks">
+            <li><span class="kind">Talk</span> Microsoft Reactor (InnovateQA): “Configuring and Launching Appium Mobile Sessions in 30 Minutes”</li>
+            <li><span class="kind">Talk</span> Microsoft Reactor (InnovateQA): “Valet All-Day: Next-Gen AI-Native Mobile Stack”</li>
+            <li><span class="kind">Podcast</span> AB Testing podcast, Episode 238</li>
+            <li><span class="kind">Book</span> “Simply Automation” (as Serene Dipster)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="how" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <h2 id="how-title" class="section-title">How it’s built</h2>
+        <p class="hint">Each suite runs from one script and, where it can, one Docker image, whichever CI calls it. Every run writes Allure results and a small status file, and GitHub Actions gathers them into the reports and this page.</p>
+        <ol class="flow">
+          <li class="stage">
+            <span class="stage-k">1 · Source</span>
+            <strong>One repo, five run scripts</strong>
+            <span>ci/run-&lt;suite&gt;.sh, plus a demo web app the web suites test</span>
+          </li>
+          <li class="stage">
+            <span class="stage-k">2 · Images</span>
+            <strong>Docker images on GHCR</strong>
+            <span>built on every push to main; Compose and kind use the same images</span>
+          </li>
+          <li class="stage stage-ci">
+            <span class="stage-k">3 · Five CIs</span>
+            <ul class="ci-list" id="ci-list"></ul>
+          </li>
+          <li class="stage">
+            <span class="stage-k">4 · Reports</span>
+            <strong>Allure, with history</strong>
+            <span>one report per suite; trends kept across runs</span>
+          </li>
+          <li class="stage">
+            <span class="stage-k">5 · Publish</span>
+            <strong>GitHub Pages</strong>
+            <span>this page reads each suite’s status JSON</span>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="suites" aria-labelledby="suites-title">
+      <div class="wrap">
+        <h2 id="suites-title" class="section-title">Live test suites</h2>
+        <p class="hint">Every suite runs on each push to main, nightly, and on demand. <strong>Run test suite</strong> opens that suite’s latest Allure report. Only the repository owner can start a new run, from the “Re-run” link.</p>
+        <div id="suite-list" class="suite-list"></div>
+        <noscript><p>Turn on JavaScript to see live results, or open the <a href="reports/">report index</a>.</p></noscript>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p>Lana Begunova · <a href="https://github.com/lana-20">github.com/lana-20</a> · <a href="https://www.linkedin.com/in/lanabegunova">linkedin.com/in/lanabegunova</a></p>
+      <p class="muted">Source and run instructions: <a href="https://github.com/lana-20/test-showcase">lana-20/test-showcase</a></p>
+    </div>
+  </footer>
+
+  <template id="suite-template">
+    <article class="suite">
+      <div class="suite-head">
+        <span class="suite-index" aria-hidden="true"></span>
+        <div>
+          <h3 class="suite-title"></h3>
+          <p class="proves"></p>
+        </div>
+      </div>
+      <ul class="tags" aria-label="Stack"></ul>
+      <div class="suite-body">
+        <p class="desc"></p>
+        <div class="status-box" aria-live="polite">
+          <div class="counts"></div>
+          <dl class="meta"></dl>
+          <div class="actions">
+            <button type="button" class="run">Run test suite</button>
+            <a class="report-link"></a>
+            <a class="rerun">Re-run on GitHub</a>
+          </div>
+          <pre class="term" hidden></pre>
+          <div class="extra"></div>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="hero.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+# The Playwright suite as a one-shot Job: same image as every other CI,
+# pointed at the in-cluster Service instead of a local server.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: playwright
+  namespace: showcase
+spec:
+  backoffLimit: 0                 # a failed run is a result, not something to retry
+  activeDeadlineSeconds: 900
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: playwright
+          image: ghcr.io/lana-20/test-showcase-playwright:ci
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DEMO_URL
+              value: http://demo-app/   # the Service above, resolved by cluster DNS
+            - name: OUT_DIR
+              value: /out
+            - name: SHOWCASE_RESULTS_NAME
+              value: playwright-k8s     # reported as its own entry next to Playwright
+            - name: HOST_CI_NAME
+              value: GitHub Actions
+            - name: HOST_RUN_URL
+              valueFrom:
+                configMapKeyRef: { name: run-info, key: run-url }
+          volumeMounts:
+            - name: out
+              mountPath: /out
+          resources:
+            requests: { cpu: 500m, memory: 1Gi }
+      volumes:
+        # The kind node's /out, which is the runner's /tmp/k8s-out (see kind-config.yaml).
+        - name: out
+          hostPath: { path: /out, type: DirectoryOrCreate }

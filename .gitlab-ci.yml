@@ -1,0 +1,29 @@
+# Vibium (Python client) on GitLab CI.
+# GitHub is the source of truth: GitHub Actions pushes main to a public GitLab
+# project (pull mirroring needs a paid tier). This job runs on that push and on
+# a nightly pipeline schedule, inside the same image GitHub Actions publishes.
+# Budget: about 3 compute minutes per run; see SETUP.md.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
+
+vibium-python:
+  image:
+    name: ghcr.io/lana-20/test-showcase-vibium-python:latest
+    entrypoint: [""]
+  timeout: 20m
+  variables:
+    OUT_DIR: $CI_PROJECT_DIR/out
+    GIT_DEPTH: "1"
+  script:
+    # Run the copy of the suite baked into the image, so it is exactly what
+    # every other CI runs; results go to the project dir for artifacts.
+    - cd /work && ci/run-vibium-python.sh
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - out/

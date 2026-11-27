@@ -1,0 +1,8 @@
+[
+  {"id": "pixel-8", "name": "Pixel 8", "platform": "android", "os": "Android 15"},
+  {"id": "pixel-7", "name": "Pixel 7 emulator", "platform": "android", "os": "Android 14"},
+  {"id": "galaxy-s24", "name": "Galaxy S24", "platform": "android", "os": "Android 14"},
+  {"id": "iphone-16", "name": "iPhone 16", "platform": "ios", "os": "iOS 18"},
+  {"id": "iphone-15-sim", "name": "iPhone 15 simulator", "platform": "ios", "os": "iOS 17"},
+  {"id": "ipad-air", "name": "iPad Air", "platform": "ios", "os": "iPadOS 18"}
+]

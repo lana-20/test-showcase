@@ -1,0 +1,10 @@
+# kind: one node, Kubernetes in Docker on the CI runner.
+# The extra mount shares a runner folder with the node, so the test Job can
+# write Allure results somewhere the workflow can read after the pod exits.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: /tmp/k8s-out   # on the runner
+        containerPath: /out      # on the kind node

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test Reports · Lana Begunova</title>
+  <meta name="description" content="Index of the latest Allure reports for Lana Begunova's five test suites.">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    .rhead { padding: 40px 0 8px; }
+    .rhead h1 { margin: 6px 0 4px; font-size: clamp(1.8rem, 4vw, 2.4rem); }
+    .rlist { list-style: none; padding: 0; margin: 24px 0 56px; display: grid; gap: 14px; }
+    .ritem { --accent: var(--link); display: grid; gap: 6px 18px; grid-template-columns: 1fr; align-items: center;
+      background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--accent);
+      border-radius: 12px; padding: 16px 18px; box-shadow: var(--shadow); }
+    @media (min-width: 760px) { .ritem { grid-template-columns: 1.3fr 1.4fr auto; } }
+    .ritem h2 { margin: 0; font-size: 1.1rem; }
+    .ritem p { margin: 2px 0 0; color: var(--muted); font-size: .92rem; }
+    .ritem .counts { margin: 0; }
+    .open { font-weight: 700; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="rhead">
+      <a href="../">← Back to the showcase</a>
+      <h1>Test reports</h1>
+      <p class="muted">The latest Allure report for each suite, with trends across runs. Each report opens with its suite name in the title.</p>
+    </header>
+    <ul class="rlist" id="rlist"></ul>
+  </main>
+  <script>
+    (async () => {
+      const get = (u) => fetch(u, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      const cfg = await get("../suites.json");
+      if (!cfg) return;
+      const entries = [];
+      for (const s of cfg.suites) {
+        entries.push({ id: s.id, accent: s.id, title: s.title, sub: s.proves });
+        for (const x of s.extra || []) entries.push({ id: x.id, accent: s.id, title: x.label, sub: "The Playwright image run as a Kubernetes Job against the in-cluster demo app." });
+      }
+      const list = document.getElementById("rlist");
+      for (const e of entries) {
+        const st = await get(`../data/status/${e.id}.json`);
+        const li = document.createElement("li");
+        li.className = "ritem";
+        li.style.setProperty("--accent", `var(--a-${e.accent})`);
+        const head = document.createElement("div");
+        const h = document.createElement("h2"); h.textContent = e.title;
+        const p = document.createElement("p"); p.textContent = e.sub;
+        head.append(h, p);
+        const mid = document.createElement("div");
+        const counts = document.createElement("div"); counts.className = "counts";
+        const badge = document.createElement("span");
+        if (st) {
+          badge.className = `badge ${st.outcome}`;
+          badge.textContent = { passed: "Passing", failed: "Failing", error: "No results" }[st.outcome] || st.outcome;
+          const c = document.createElement("span"); c.className = "count";
+          c.textContent = `${st.passed} passed · ${st.failed + (st.broken || 0)} failed · ${st.skipped} skipped`;
+          counts.append(badge, c);
+          const meta = document.createElement("p");
+          meta.textContent = `Ran on ${st.ran_on?.name || "unknown"} · ${new Date(st.finished_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
+          mid.append(counts, meta);
+        } else {
+          badge.className = "badge unknown"; badge.textContent = "No run yet"; counts.append(badge); mid.append(counts);
+        }
+        const a = document.createElement("a");
+        a.className = "open"; a.href = `${e.id}/`; a.textContent = `Open ${e.title} report →`;
+        li.append(head, mid, a);
+        list.append(li);
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tidepool · Tasks</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <nav class="topbar">
+    <strong>Tidepool</strong>
+    <a href="board.html" aria-current="page">Tasks</a>
+    <a href="catalog.html">Catalog</a>
+    <span id="greeting" data-testid="greeting"></span>
+    <button id="sign-out" data-testid="sign-out" class="link">Sign out</button>
+  </nav>
+  <main class="card wide" aria-labelledby="title">
+    <h1 id="title">Tasks</h1>
+    <form id="task-form" data-testid="task-form">
+      <label for="new-task" class="sr-only">New task</label>
+      <input id="new-task" data-testid="new-task" placeholder="What needs testing?" maxlength="80">
+      <button type="submit" data-testid="add-task">Add</button>
+    </form>
+    <p id="task-error" role="alert" data-testid="task-error" class="error" hidden></p>
+    <div class="filters" role="group" aria-label="Filter tasks">
+      <button data-filter="all" data-testid="filter-all" aria-pressed="true">All</button>
+      <button data-filter="active" data-testid="filter-active" aria-pressed="false">Active</button>
+      <button data-filter="done" data-testid="filter-done" aria-pressed="false">Done</button>
+    </div>
+    <ul id="task-list" data-testid="task-list" aria-label="Task list"></ul>
+    <p class="muted"><span id="remaining" data-testid="remaining">0 tasks left</span></p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

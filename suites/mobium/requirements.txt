@@ -1,0 +1,4 @@
+# The Mobium Python client is not on PyPI yet; install it from the tagged release.
+mobium @ git+https://github.com/mobiumdev/mobium.git@v0.1.0-rc1#subdirectory=clients/python
+pytest==9.2.0
+allure-pytest==2.16.2

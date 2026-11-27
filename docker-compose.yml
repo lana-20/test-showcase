@@ -1,0 +1,41 @@
+# One command runs the demo app plus a suite, in the same images CI uses:
+#   docker compose run --rm playwright
+#   docker compose run --rm vibium-python
+#   docker compose run --rm vibium-mcp
+# Results land in ./out/allure-results/<suite> and ./out/status/<suite>.json.
+# Set TAG to use a specific published build (default: latest).
+name: test-showcase
+
+x-suite: &suite
+  depends_on:
+    demo-app:
+      condition: service_healthy
+  environment:
+    DEMO_URL: http://demo-app:8080/
+    OUT_DIR: /work/out
+  volumes:
+    - ./out:/work/out
+
+services:
+  demo-app:
+    image: ghcr.io/lana-20/test-showcase-demo-app:${TAG:-latest}
+    build: { context: ., dockerfile: docker/demo-app.Dockerfile }
+    ports: ["8080:8080"]
+
+  playwright:
+    <<: *suite
+    image: ghcr.io/lana-20/test-showcase-playwright:${TAG:-latest}
+    build: { context: ., dockerfile: docker/playwright.Dockerfile }
+    profiles: [suites]
+
+  vibium-python:
+    <<: *suite
+    image: ghcr.io/lana-20/test-showcase-vibium-python:${TAG:-latest}
+    build: { context: ., dockerfile: docker/vibium.Dockerfile, args: { SUITE: vibium-python } }
+    profiles: [suites]
+
+  vibium-mcp:
+    <<: *suite
+    image: ghcr.io/lana-20/test-showcase-vibium-mcp:${TAG:-latest}
+    build: { context: ., dockerfile: docker/vibium.Dockerfile, args: { SUITE: vibium-mcp } }
+    profiles: [suites]
