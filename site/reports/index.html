@@ -38,11 +38,19 @@
       const entries = [];
       for (const s of cfg.suites) {
         entries.push({ id: s.id, accent: s.id, title: s.title, sub: s.proves });
-        for (const x of s.extra || []) entries.push({ id: x.id, accent: s.id, title: x.label, sub: "The Playwright image run as a Kubernetes Job against the in-cluster demo app." });
+        for (const x of s.extra || []) entries.push({ id: x.id, accent: s.id, title: x.label, sub: x.about || "", optional: x.optional, pending: x.pending });
       }
       const list = document.getElementById("rlist");
       for (const e of entries) {
         const st = await get(`../data/status/${e.id}.json`);
+        if (!st && e.optional) {
+          const li = document.createElement("li"); li.className = "ritem";
+          li.style.setProperty("--accent", `var(--a-${e.accent})`);
+          const h = document.createElement("h2"); h.textContent = e.title;
+          const p = document.createElement("p"); p.textContent = e.pending || "Not run yet.";
+          const d = document.createElement("div"); d.append(h, p); li.append(d); list.append(li);
+          continue;
+        }
         const li = document.createElement("li");
         li.className = "ritem";
         li.style.setProperty("--accent", `var(--a-${e.accent})`);

@@ -122,16 +122,23 @@
     });
   }
 
-  function extraRuns(card, suite, extraStatuses, ci) {
+  function extraRuns(card, suite, extraStatuses) {
     const box = card.querySelector(".extra");
     (suite.extra || []).forEach((x, i) => {
       const st = extraStatuses[i];
       const sub = el("div", { class: "sub" });
-      const summary = st
-        ? `${st.passed} passed · ${st.failed + (st.broken || 0)} failed · ran on ${st.ran_on?.name ?? "unknown"}, ${ago(st.finished_at)}`
-        : "no run yet";
-      sub.append(el("strong", { text: x.label }), document.createTextNode(`: ${summary}. `),
-        el("a", { href: `reports/${x.id}/`, text: `Open the ${x.label} report` }));
+      sub.append(el("strong", { text: x.label }));
+      if (st) {
+        const failed = st.failed + (st.broken || 0);
+        sub.append(document.createTextNode(
+          `: ${st.passed} passed · ${failed} failed. Ran on ${st.ran_on?.name ?? "unknown"}, ${ago(st.finished_at)}. `),
+          el("a", { href: `reports/${x.id}/`, text: "Open report" }));
+        if (st.ran_on?.url) sub.append(document.createTextNode(" · "), el("a", { href: st.ran_on.url, text: "run" }));
+      } else {
+        // Never claim a run that did not happen.
+        sub.append(document.createTextNode(`: ${x.pending ?? "no run yet"}.`));
+      }
+      if (x.about) sub.append(el("div", { class: "muted", text: x.about }));
       box.append(sub);
     });
   }
@@ -178,7 +185,7 @@
       rerun.href = `${REPO}/actions/workflows/${suite.workflow}`;
       rerun.title = "Opens the workflow on GitHub. Only the repository owner can start a run.";
       terminalRun(card, suite, status, reportUrl);
-      extraRuns(card, suite, extras[i], config.ci);
+      extraRuns(card, suite, extras[i]);
       list.append(card);
 
       const target = config.ci[suite.targetCi]?.name ?? suite.targetCi;

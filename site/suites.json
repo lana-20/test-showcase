@@ -1,11 +1,29 @@
 {
   "ci": {
-    "github-actions": { "name": "GitHub Actions" },
-    "gitlab-ci": { "name": "GitLab CI" },
-    "jenkins": { "name": "Jenkins" },
-    "azure-pipelines": { "name": "Azure Pipelines" },
-    "circleci": { "name": "CircleCI" },
-    "kubernetes": { "name": "Kubernetes (kind)" }
+    "github-actions": {
+      "name": "GitHub Actions"
+    },
+    "gitlab-ci": {
+      "name": "GitLab CI"
+    },
+    "jenkins": {
+      "name": "Jenkins"
+    },
+    "azure-pipelines": {
+      "name": "Azure Pipelines"
+    },
+    "circleci": {
+      "name": "CircleCI"
+    },
+    "kubernetes": {
+      "name": "Kubernetes (kind)"
+    },
+    "kernel": {
+      "name": "Kernel"
+    },
+    "firebase-test-lab": {
+      "name": "Firebase Test Lab"
+    }
   },
   "suites": [
     {
@@ -13,38 +31,89 @@
       "title": "Playwright",
       "proves": "Page objects, fixtures and web-first assertions keep a UI suite fast and free of sleeps.",
       "description": "Tests sign in, manage tasks and search a device catalog in the Tidepool demo app, which CI serves from this repo. Page objects own the locators (roles, labels, test ids). Fixtures give every test a fresh browser context and a signed-in user. Assertions retry until the app settles, so the app's random delays never need a sleep. On a failure, Allure gets the screenshot and the trace. The same image also runs as a Kubernetes Job on a kind cluster.",
-      "tags": ["TypeScript", "@playwright/test", "Web · Chromium", "allure-playwright"],
+      "tags": [
+        "TypeScript",
+        "@playwright/test",
+        "Web · Chromium",
+        "allure-playwright"
+      ],
       "targetCi": "github-actions",
       "image": "ghcr.io/lana-20/test-showcase-playwright",
       "workflow": "showcase.yml",
-      "extra": [{ "id": "playwright-k8s", "label": "Playwright on Kubernetes (kind)" }]
+      "extra": [
+        {
+          "id": "playwright-k8s",
+          "label": "Playwright on Kubernetes (kind)",
+          "about": "The Playwright image as a Kubernetes Job on kind, testing the demo app through its in-cluster Service."
+        },
+        {
+          "id": "playwright-kernel",
+          "label": "Playwright on a Kernel cloud browser",
+          "optional": true,
+          "pending": "Kernel: ready, pending account",
+          "about": "The same tests in a Kernel cloud browser over CDP, against the public copy of the demo app. Runs nightly."
+        }
+      ]
     },
     {
       "id": "vibium-python",
       "title": "Vibium · Python client",
       "proves": "The same flows on Vibium's WebDriver BiDi client, with explicit waits instead of sleeps.",
       "description": "Pytest tests cover the same app through Vibium's sync Python API. Elements are found by label, role, placeholder and test id. Vibium waits for an element before it acts on it. Text that changes later is checked with wait_for_function polling in the browser. Every test gets its own browser context, and a pytest hook attaches a screenshot and the URL to Allure on failure. One test works around a client-side redirect that page.go() reports as a canceled navigation; the comment in the test says why.",
-      "tags": ["Python", "pytest + Vibium 26.11", "Web · Chrome (BiDi)", "allure-pytest"],
+      "tags": [
+        "Python",
+        "pytest + Vibium 26.11",
+        "Web · Chrome (BiDi)",
+        "allure-pytest"
+      ],
       "targetCi": "gitlab-ci",
       "image": "ghcr.io/lana-20/test-showcase-vibium-python",
-      "workflow": "showcase.yml"
+      "workflow": "showcase.yml",
+      "extra": [
+        {
+          "id": "vibium-python-kernel",
+          "label": "Vibium on a Kernel cloud browser",
+          "optional": true,
+          "pending": "Kernel: ready, pending account",
+          "about": "The same tests in a Kernel cloud browser over WebDriver BiDi (Vibium speaks W3C protocols, not CDP). Runs nightly."
+        }
+      ]
     },
     {
       "id": "appium-java",
       "title": "Appium · Java",
       "proves": "Native Android UI automation in Java on an emulator, run by a real Jenkins pipeline.",
       "description": "JUnit tests drive Appium's ApiDemos app on an Android 15 emulator through the UiAutomator2 driver. They cover list navigation with UiScrollable, text input, checkboxes, radio groups, toggles, disabled state, alert dialogs and an appending log view. Screen objects use resource ids and explicit WebDriverWaits, and each test opens its screen directly with mobile: startActivity. A JUnit extension owns the session and attaches a screenshot and the page source on failure. The declarative Jenkinsfile runs in Jenkinsfile Runner, a throwaway Jenkins, while the emulator and the Appium server run on the host.",
-      "tags": ["Java 21", "JUnit 6 + Appium java-client", "Android emulator · API 35", "allure-jupiter"],
+      "tags": [
+        "Java 21",
+        "JUnit 6 + Appium java-client",
+        "Android emulator · API 35",
+        "allure-jupiter"
+      ],
       "targetCi": "jenkins",
       "image": "ghcr.io/lana-20/test-showcase-jenkins-runner",
-      "workflow": "showcase.yml"
+      "workflow": "showcase.yml",
+      "extra": [
+        {
+          "id": "firebase-robo",
+          "label": "Real device via Firebase Test Lab (Robo)",
+          "optional": true,
+          "pending": "Firebase Test Lab: ready, pending account",
+          "about": "A nightly Robo crawl of the same APK on one real physical Android phone and one virtual device."
+        }
+      ]
     },
     {
       "id": "vibium-mcp",
       "title": "Vibium · MCP server",
       "proves": "An agent's tool layer can be tested like an API: handshake, schemas, calls and error results.",
       "description": "Tests start vibium mcp over stdio with the official Python MCP SDK, the way an agent host does. They check the handshake and the tool catalog with its input schemas. Then they drive the demo app with tool calls: navigate, fill, click, wait_for_text, map with @refs, set and is_set, evaluate and screenshot. They also check that a failing or unknown tool comes back as an error result and the session keeps working after it. Each tool call is an Allure step with its arguments and result attached.",
-      "tags": ["Python", "MCP SDK + pytest-asyncio", "MCP stdio → Chrome", "allure-pytest"],
+      "tags": [
+        "Python",
+        "MCP SDK + pytest-asyncio",
+        "MCP stdio → Chrome",
+        "allure-pytest"
+      ],
       "targetCi": "azure-pipelines",
       "image": "ghcr.io/lana-20/test-showcase-vibium-mcp",
       "workflow": "showcase.yml"
@@ -54,7 +123,12 @@
       "title": "Mobium",
       "proves": "Mobium's map → ref → act loop drives a real Android app and does its own scrolling and waiting.",
       "description": "Pytest tests use the Mobium Python client and the pinned v0.1.0-rc1 binary to drive ApiDemos on an Android 15 emulator. They map the screen to @refs, tap rows below the fold (Mobium scrolls to them), fill and replace field values, and set and unset a checkbox with confirmation. They also read map_diff after a tap, answer an alert dialog, and expect a missing element to be refused with a named error. Every client call is an Allure step. On failure, the screenshot and the screen map are attached.",
-      "tags": ["Python", "Mobium client + pytest", "Android emulator · API 35", "allure-pytest"],
+      "tags": [
+        "Python",
+        "Mobium client + pytest",
+        "Android emulator · API 35",
+        "allure-pytest"
+      ],
       "targetCi": "circleci",
       "image": null,
       "workflow": "showcase.yml"

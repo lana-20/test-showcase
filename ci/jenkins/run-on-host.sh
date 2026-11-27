@@ -11,7 +11,11 @@ nohup appium --address 127.0.0.1 --port 4723 --log-no-colors --log out/appium.lo
 for _ in $(seq 1 60); do curl -fsS http://127.0.0.1:4723/status >/dev/null 2>&1 && break; sleep 1; done
 curl -fsS http://127.0.0.1:4723/status
 mkdir -p "$HOME/.m2"
+# The repo is mounted twice: at /workspace, where the launcher looks for the
+# Jenkinsfile, and at its host path, so the APK path the tests hand to Appium
+# (which runs on the host) means the same file on both sides.
 docker run --rm --network host \
-  -v "$REPO:/workspace" -v "$HOME/.m2:/root/.m2" \
+  -v "$REPO:/workspace" -v "$REPO:$REPO" -v "$HOME/.m2:/root/.m2" \
+  -e APP_PATH="$REPO/apps/ApiDemos-debug.apk" \
   -e HOST_CI_NAME="GitHub Actions" -e HOST_RUN_URL="${RUN_URL:-}" -e GIT_COMMIT="${GITHUB_SHA:-}" \
   "${JENKINS_IMAGE:?set JENKINS_IMAGE}"     # the launcher runs /workspace/Jenkinsfile

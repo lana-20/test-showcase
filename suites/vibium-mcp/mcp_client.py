@@ -72,7 +72,9 @@ async def vibium_mcp() -> AsyncIterator[VibiumMCP]:
     args = ["mcp", "--screenshot-dir", ""]
     if os.environ.get("HEADED") != "1":
         args.append("--headless")
-    params = StdioServerParameters(command=find_vibium_bin(), args=args)
+    # The SDK starts servers with a minimal environment by default; pass ours on
+    # so settings such as VIBIUM_CHROME_ARGS (set in the CI image) reach Vibium.
+    params = StdioServerParameters(command=find_vibium_bin(), args=args, env=dict(os.environ))
     allure.dynamic.parameter("server", "vibium " + " ".join(args))
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:

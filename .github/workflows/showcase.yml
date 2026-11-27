@@ -243,6 +243,89 @@ jobs:
         if: always()
         with: { name: results-mobium, path: out/, if-no-files-found: warn, retention-days: 14 }
 
+  # ---------- Cloud legs: nightly or on demand only, and only once Lana's accounts exist ----------
+  kernel:
+    name: Kernel cloud browser · Playwright and Vibium
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Check for the Kernel API key
+        id: key
+        run: |
+          if [ -n "$KERNEL_API_KEY" ]; then echo "on=true" >> "$GITHUB_OUTPUT"
+          else echo "KERNEL_API_KEY is not set: Kernel is ready, pending account."; fi
+      - uses: actions/setup-node@v7.1.0
+        if: steps.key.outputs.on == 'true'
+        with: { node-version: "24" }
+      - uses: actions/setup-python@v7.1.0
+        if: steps.key.outputs.on == 'true'
+        with: { python-version: "3.12" }
+      - name: Install suite dependencies (no local browsers needed)
+        if: steps.key.outputs.on == 'true'
+        run: |
+          (cd suites/playwright && npm ci --no-audit --no-fund)
+          pip install -r suites/vibium-python/requirements.txt
+      - name: Playwright on Kernel (CDP)
+        if: steps.key.outputs.on == 'true'
+        continue-on-error: true
+        run: ci/run-playwright-kernel.sh
+      - name: Vibium Python on Kernel (WebDriver BiDi)
+        if: steps.key.outputs.on == 'true'
+        continue-on-error: true
+        run: ci/run-vibium-python-kernel.sh
+      - uses: actions/upload-artifact@v7.0.2
+        if: always() && steps.key.outputs.on == 'true'
+        with: { name: results-playwright-kernel, path: "out/**/playwright-kernel*", if-no-files-found: ignore, retention-days: 30 }
+      - uses: actions/upload-artifact@v7.0.2
+        if: always() && steps.key.outputs.on == 'true'
+        with: { name: results-vibium-python-kernel, path: "out/**/vibium-python-kernel*", if-no-files-found: ignore, retention-days: 30 }
+
+  firebase-robo:
+    name: Firebase Test Lab · Robo on a real device
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write   # for Workload Identity Federation
+    env:
+      GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Check for a Firebase project
+        id: cfg
+        run: |
+          if [ -n "$GCP_PROJECT" ] && { [ -n "$GCP_WIF_PROVIDER" ] || [ -n "$GCP_SA_KEY" ]; }; then echo "on=true" >> "$GITHUB_OUTPUT"
+          else echo "No Firebase project configured: Test Lab is ready, pending account."; fi
+          [ -n "$GCP_WIF_PROVIDER" ] && echo "wif=true" >> "$GITHUB_OUTPUT" || true
+      - uses: google-github-actions/auth@v3
+        if: steps.cfg.outputs.on == 'true' && steps.cfg.outputs.wif == 'true'
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/auth@v3
+        if: steps.cfg.outputs.on == 'true' && steps.cfg.outputs.wif != 'true'
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v3.0.1
+        if: steps.cfg.outputs.on == 'true'
+      - name: Robo crawl of ApiDemos (one physical, one virtual device)
+        if: steps.cfg.outputs.on == 'true'
+        run: |
+          gcloud config set project "$GCP_PROJECT"
+          ci/android/fetch-apk.sh
+          python3 ci/firebase/robo.py
+      - uses: actions/upload-artifact@v7.0.2
+        if: always() && steps.cfg.outputs.on == 'true'
+        with: { name: results-firebase-robo, path: out/, if-no-files-found: ignore, retention-days: 30 }
+
   # ---------- Mirror to GitLab (pull mirroring is a paid GitLab feature) ----------
   gitlab-mirror:
     name: Mirror main to GitLab
@@ -263,10 +346,13 @@ jobs:
   # ---------- Reports and Pages ----------
   report:
     name: Allure reports and site
-    needs: [playwright, vibium-python, vibium-mcp, kubernetes, appium-jenkins, mobium]
+    needs: [playwright, vibium-python, vibium-mcp, kubernetes, appium-jenkins, mobium, kernel, firebase-robo]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read     # to reuse the last nightly cloud results on other runs
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/download-artifact@v8.0.2
@@ -286,6 +372,10 @@ jobs:
           AZURE_DEVOPS_TOKEN: ${{ secrets.AZURE_DEVOPS_TOKEN }}
           CIRCLECI_TOKEN: ${{ secrets.CIRCLECI_TOKEN }}
         run: python3 ci/fetch_external.py --into collected
+      - name: Reuse the last nightly cloud results when they did not run now
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ci/carry_over.sh collected playwright-kernel vibium-python-kernel firebase-robo
       - uses: actions/setup-java@v6.3.0
         with: { distribution: temurin, java-version: "21" }
       - name: Install Allure 2 commandline

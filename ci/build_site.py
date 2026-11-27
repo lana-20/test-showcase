@@ -159,10 +159,16 @@ def main() -> int:
         (status_out / f"{rid}.json").write_text(json.dumps(status, indent=2) + "\n", encoding="utf-8")
 
         if has_results:
+            carried = (results / ".carried-over").exists()
             restored = restore_history(args.live, rid, results)
             write_executor(results, status, args.live, rid)
             subprocess.run([args.allure, "generate", str(results), "-o", str(report_dir), "--clean",
                             "--name", f"{title} · test-showcase"], check=True)
+            if carried:
+                # This run was already counted in the trend when it happened: publish the
+                # history as it was, so rebuilding the report does not add a second point.
+                for f in (results / "history").glob("*.json"):
+                    shutil.copy(f, report_dir / "history" / f.name)
             add_back_bar(report_dir / "index.html", title, parent_of.get(rid, rid))
             summary.append(f"{rid}: report generated ({restored} history files restored)")
         else:
