@@ -8,14 +8,17 @@ import java.util.Optional;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.TestWatcher;
 import org.openqa.selenium.OutputType;
 
 /**
  * One Appium session per test class (session start is the slow part), with a
  * screenshot and the page source attached to Allure when a test fails.
+ * Tests receive the driver as an {@code AndroidDriver} parameter.
  */
-public final class AppiumExtension implements BeforeAllCallback, AfterAllCallback, TestWatcher {
+public final class AppiumExtension implements BeforeAllCallback, AfterAllCallback, TestWatcher, ParameterResolver {
     private static final ExtensionContext.Namespace NS = ExtensionContext.Namespace.create(AppiumExtension.class);
 
     public static AndroidDriver driver(ExtensionContext context) {
@@ -34,6 +37,17 @@ public final class AppiumExtension implements BeforeAllCallback, AfterAllCallbac
         if (driver != null) {
             driver.quit();
         }
+    }
+
+    /** Lets tests and lifecycle methods take the class's driver as a parameter. */
+    @Override
+    public boolean supportsParameter(ParameterContext parameter, ExtensionContext context) {
+        return parameter.getParameter().getType() == AndroidDriver.class;
+    }
+
+    @Override
+    public Object resolveParameter(ParameterContext parameter, ExtensionContext context) {
+        return driver(context);
     }
 
     @Override

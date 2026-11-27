@@ -14,6 +14,15 @@ Five small, real test suites. Each one has its own CI, runs from one script, and
 
 Until an external CI account is connected, that suite runs on GitHub Actions from the same script and image. The page says so ("Ran on: GitHub Actions · GitLab CI pipeline ready") and never shows a CI that did not produce the report. [SETUP.md](SETUP.md) covers connecting each account.
 
+Extra legs:
+
+- **Kubernetes (kind):** the Playwright image runs as a Job against the demo app's in-cluster Service on every run ([k8s/](k8s/)).
+- **Kernel cloud browsers** (nightly): Playwright over CDP and Vibium over WebDriver BiDi, against the public copy of the demo app at `/demo/`.
+- **Firebase Test Lab** (nightly): a Robo crawl of ApiDemos on one real physical phone and one virtual device. Google is shutting Test Lab down on 2027-09-30; see SETUP.md.
+
+The Kernel and Firebase legs show "ready, pending account" until their keys exist. Free open-source programs from
+device clouds are written up, but not applied for, in [docs/cloud-oss-programs.md](docs/cloud-oss-programs.md).
+
 ## How it fits together
 
 ```
