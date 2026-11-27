@@ -41,8 +41,9 @@
         for (const x of s.extra || []) entries.push({ id: x.id, accent: s.id, title: x.label, sub: x.about || "", optional: x.optional, pending: x.pending });
       }
       const list = document.getElementById("rlist");
+      const available = new Set((await get("../data/status/index.json")) || []);
       for (const e of entries) {
-        const st = await get(`../data/status/${e.id}.json`);
+        const st = available.has(e.id) ? await get(`../data/status/${e.id}.json`) : null;
         if (!st && e.optional) {
           const li = document.createElement("li"); li.className = "ritem";
           li.style.setProperty("--accent", `var(--a-${e.accent})`);

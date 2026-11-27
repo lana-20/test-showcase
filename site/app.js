@@ -200,9 +200,10 @@
   async function main() {
     const config = await getJSON("suites.json");
     if (!config) return;
-    const statuses = await Promise.all(config.suites.map((s) => getJSON(`data/status/${s.id}.json`)));
-    const extras = await Promise.all(config.suites.map((s) =>
-      Promise.all((s.extra || []).map((x) => getJSON(`data/status/${x.id}.json`)))));
+    const available = new Set((await getJSON("data/status/index.json")) || []);
+    const status = (id) => (available.has(id) ? getJSON(`data/status/${id}.json`) : Promise.resolve(null));
+    const statuses = await Promise.all(config.suites.map((s) => status(s.id)));
+    const extras = await Promise.all(config.suites.map((s) => Promise.all((s.extra || []).map((x) => status(x.id)))));
     render(config, statuses, extras);
   }
   main();

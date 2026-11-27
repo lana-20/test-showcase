@@ -11,6 +11,9 @@ nohup appium --address 127.0.0.1 --port 4723 --log-no-colors --log out/appium.lo
 for _ in $(seq 1 60); do curl -fsS http://127.0.0.1:4723/status >/dev/null 2>&1 && break; sleep 1; done
 curl -fsS http://127.0.0.1:4723/status
 mkdir -p "$HOME/.m2"
+# Jenkinsfile Runner runs as root, and Allure writes owner-only files: give
+# everything back to the runner user so the results can be uploaded.
+trap 'sudo chown -R "$(id -u):$(id -g)" "$REPO/out" "$REPO/suites/appium-java" "$HOME/.m2" 2>/dev/null || true' EXIT
 # The repo is mounted twice: at /workspace, where the launcher looks for the
 # Jenkinsfile, and at its host path, so the APK path the tests hand to Appium
 # (which runs on the host) means the same file on both sides.

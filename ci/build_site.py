@@ -133,7 +133,7 @@ def main() -> int:
     summary = []
     parent_of = {x["id"]: s["id"] for s in config["suites"] for x in s.get("extra", [])}
     # A public copy of the demo app, for cloud browsers that cannot reach a CI runner.
-    shutil.copytree(REPO / "demo-app", args.out / "demo")
+    shutil.copytree(REPO / "demo-app", args.out / "demo", ignore=shutil.ignore_patterns("serve.mjs"))
 
     for rid, title, optional in report_ids(config):
         results = args.collected / "allure-results" / rid
@@ -175,6 +175,9 @@ def main() -> int:
             placeholder(report_dir, title, status.get("note") or "This run produced no test results. The CI log has the details.")
             summary.append(f"{rid}: no results, placeholder written")
 
+    # Which status files exist, so the page never requests one that does not.
+    available = sorted(f.stem for f in status_out.glob("*.json") if f.stem != "index")
+    (status_out / "index.json").write_text(json.dumps(available) + "\n", encoding="utf-8")
     (args.out / ".nojekyll").write_text("", encoding="utf-8")
     print("\n".join(summary))
     return 0

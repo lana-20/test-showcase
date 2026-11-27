@@ -208,6 +208,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: bash ci/jenkins/run-on-host.sh
+      - name: Make results readable (Jenkins ran as root)
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" out ~/.m2 suites/appium-java || true
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with: { name: results-appium-java, path: out/, if-no-files-found: warn, retention-days: 14 }
