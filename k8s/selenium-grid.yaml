@@ -1,0 +1,152 @@
+# Selenium Grid 4 on kind: one hub (router, distributor, event bus) and one
+# node per browser, all from the official selenium/* images. Each node takes
+# up to three sessions, so the suite's three parallel tests never queue.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-hub
+  namespace: showcase
+  labels: { app: selenium-hub }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: selenium-hub }
+  template:
+    metadata:
+      labels: { app: selenium-hub }
+    spec:
+      containers:
+        - name: hub
+          image: selenium/hub:4.54.0-20261124
+          ports:
+            - containerPort: 4444   # WebDriver and BiDi (WebSocket) traffic
+            - containerPort: 4442   # event bus: publish
+            - containerPort: 4443   # event bus: subscribe
+          readinessProbe:
+            httpGet: { path: /readyz, port: 4444 }
+            periodSeconds: 3
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: selenium-hub
+  namespace: showcase
+spec:
+  selector: { app: selenium-hub }
+  ports:
+    - { name: web, port: 4444, targetPort: 4444 }
+    - { name: publish, port: 4442, targetPort: 4442 }
+    - { name: subscribe, port: 4443, targetPort: 4443 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-node-chrome
+  namespace: showcase
+  labels: { app: selenium-node, browser: chrome }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: selenium-node, browser: chrome }
+  template:
+    metadata:
+      labels: { app: selenium-node, browser: chrome }
+    spec:
+      containers:
+        - name: node
+          image: selenium/node-chrome:4.54.0-20261124
+          envFrom:
+            - configMapRef: { name: selenium-node-config }
+          env:
+            # Register with the pod IP: pod names are not resolvable by the hub.
+            - name: SE_NODE_HOST
+              valueFrom: { fieldRef: { fieldPath: status.podIP } }
+          volumeMounts:
+            - { name: dshm, mountPath: /dev/shm }
+          resources:
+            requests: { cpu: 500m, memory: 1Gi }
+      volumes:
+        # Browsers need more shared memory than a container's default 64 MB.
+        - name: dshm
+          emptyDir: { medium: Memory, sizeLimit: 2Gi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-node-firefox
+  namespace: showcase
+  labels: { app: selenium-node, browser: firefox }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: selenium-node, browser: firefox }
+  template:
+    metadata:
+      labels: { app: selenium-node, browser: firefox }
+    spec:
+      containers:
+        - name: node
+          image: selenium/node-firefox:4.54.0-20261124
+          envFrom:
+            - configMapRef: { name: selenium-node-config }
+          env:
+            - name: SE_NODE_HOST
+              valueFrom: { fieldRef: { fieldPath: status.podIP } }
+          volumeMounts:
+            - { name: dshm, mountPath: /dev/shm }
+          resources:
+            requests: { cpu: 500m, memory: 1Gi }
+      volumes:
+        - name: dshm
+          emptyDir: { medium: Memory, sizeLimit: 2Gi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-node-edge
+  namespace: showcase
+  labels: { app: selenium-node, browser: edge }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: selenium-node, browser: edge }
+  template:
+    metadata:
+      labels: { app: selenium-node, browser: edge }
+    spec:
+      containers:
+        - name: node
+          image: selenium/node-edge:4.54.0-20261124   # amd64 only, like Microsoft's Linux Edge builds
+          envFrom:
+            - configMapRef: { name: selenium-node-config }
+          env:
+            - name: SE_NODE_HOST
+              valueFrom: { fieldRef: { fieldPath: status.podIP } }
+          volumeMounts:
+            - { name: dshm, mountPath: /dev/shm }
+          resources:
+            requests: { cpu: 500m, memory: 1Gi }
+      volumes:
+        - name: dshm
+          emptyDir: { medium: Memory, sizeLimit: 2Gi }
+---
+# Shared by the three nodes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: selenium-node-config
+  namespace: showcase
+data:
+  SE_EVENT_BUS_HOST: selenium-hub
+  SE_EVENT_BUS_PUBLISH_PORT: "4442"
+  SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+  # The address clients use. Nodes rewrite each session's webSocketUrl to go
+  # through the hub, so the BiDi WebSocket works from anywhere the hub does.
+  SE_NODE_GRID_URL: http://selenium-hub:4444
+  SE_NODE_MAX_SESSIONS: "3"
+  SE_NODE_OVERRIDE_MAX_SESSIONS: "true"
+  SE_START_VNC: "false"
+  SE_SCREEN_WIDTH: "1280"
+  SE_SCREEN_HEIGHT: "900"

@@ -9,7 +9,7 @@ kind load docker-image "$REG/test-showcase-demo-app:ci" "$REG/test-showcase-play
 
 kubectl apply -f k8s/namespace.yaml
 kubectl -n showcase create configmap run-info --from-literal=run-url="${RUN_URL:-}" \
-  --dry-run=client -o yaml | kubectl apply -f -
+  --from-literal=commit="${GITHUB_SHA:-}" --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f k8s/demo-app.yaml
 kubectl -n showcase rollout status deployment/demo-app --timeout=120s
 

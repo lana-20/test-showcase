@@ -1,4 +1,4 @@
-// Renders the five suite cards from suites.json and each suite's status JSON
+// Renders the suite cards from suites.json and each suite's status JSON
 // (data/status/<id>.json, written by ci/lib/status.py on whichever CI ran it).
 (() => {
   "use strict";

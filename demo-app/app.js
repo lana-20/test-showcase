@@ -49,6 +49,8 @@
 
   // --- Tasks --------------------------------------------------------------
   if (page === "board.html" && requireUser()) {
+    $("#today").textContent = "Today is " + new Date().toLocaleDateString("en-US",
+      { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
     let tasks = store.get("tp-tasks", []);
     let filter = "all";
     const list = $("#task-list");
@@ -143,9 +145,12 @@
       c.hidden = false;
     });
     renderCart();
-    // Simulate a slow API so tests exercise waiting.
+    // Simulate a slow API so tests exercise waiting. The request carries the
+    // session as a bearer token, and a non-2xx answer is an error, not data.
     setTimeout(() => {
-      fetch("devices.json").then((r) => r.json()).then((d) => { devices = d; render(); })
+      fetch("devices.json", { headers: { Authorization: "Bearer tp-" + store.get("tp-user", "") } })
+        .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then((d) => { devices = d; render(); })
         .catch(() => { status.textContent = "Could not load devices."; });
     }, 300 + Math.random() * 500);
   }

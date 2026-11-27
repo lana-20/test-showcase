@@ -2,6 +2,7 @@
 #   docker compose run --rm playwright
 #   docker compose run --rm vibium-python
 #   docker compose run --rm vibium-mcp
+#   docker compose up -d selenium-hub chrome firefox edge && docker compose run --rm selenium-bidi
 # Results land in ./out/allure-results/<suite> and ./out/status/<suite>.json.
 # Set TAG to use a specific published build (default: latest).
 name: test-showcase
@@ -38,4 +39,49 @@ services:
     <<: *suite
     image: ghcr.io/lana-20/test-showcase-vibium-mcp:${TAG:-latest}
     build: { context: ., dockerfile: docker/vibium.Dockerfile, args: { SUITE: vibium-mcp } }
+    profiles: [suites]
+
+  # Selenium Grid for the Selenium BiDi suite: the same official images as k8s/selenium-grid.yaml.
+  # Edge has no arm64 build; on Apple silicon start only chrome and firefox and set BROWSERS=chrome,firefox.
+  selenium-hub:
+    image: selenium/hub:4.54.0-20261124
+    ports: ["4444:4444"]
+    profiles: [grid]
+
+  chrome:
+    image: selenium/node-chrome:4.54.0-20261124
+    shm_size: 2gb
+    depends_on: [selenium-hub]
+    environment: &grid-node
+      SE_EVENT_BUS_HOST: selenium-hub
+      SE_EVENT_BUS_PUBLISH_PORT: "4442"
+      SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+      SE_NODE_GRID_URL: http://selenium-hub:4444   # BiDi WebSockets go through the hub
+      SE_NODE_MAX_SESSIONS: "3"
+      SE_NODE_OVERRIDE_MAX_SESSIONS: "true"
+    profiles: [grid]
+
+  firefox:
+    image: selenium/node-firefox:4.54.0-20261124
+    shm_size: 2gb
+    depends_on: [selenium-hub]
+    environment: *grid-node
+    profiles: [grid]
+
+  edge:
+    image: selenium/node-edge:4.54.0-20261124
+    shm_size: 2gb
+    depends_on: [selenium-hub]
+    environment: *grid-node
+    profiles: [grid]
+
+  selenium-bidi:
+    <<: *suite
+    image: ghcr.io/lana-20/test-showcase-selenium-bidi:${TAG:-latest}
+    build: { context: ., dockerfile: docker/selenium-bidi.Dockerfile }
+    environment:
+      DEMO_URL: http://demo-app:8080/
+      OUT_DIR: /work/out
+      SELENIUM_REMOTE_URL: http://selenium-hub:4444
+      BROWSERS: ${BROWSERS:-chrome,firefox,edge}
     profiles: [suites]

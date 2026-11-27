@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lana Begunova · SDET: Mobile, Web and AI Test Automation</title>
-  <meta name="description" content="Lana Begunova, SDET. Five live test suites (Playwright, Vibium, Appium, Vibium MCP and Mobium) running on five CI systems, with Allure reports.">
+  <meta name="description" content="Lana Begunova, SDET. Six live test suites (Playwright, Vibium, Appium, Vibium MCP, Mobium and Selenium WebDriver BiDi) running on five CI systems and Kubernetes, with Allure reports.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -46,7 +46,8 @@
             <h3>Web</h3>
             <ul class="chips">
               <li><a class="chip" href="#playwright">Playwright</a></li>
-              <li><span class="chip">Selenium WebDriver BiDi</span></li>
+              <li><a class="chip" href="#selenium-bidi">Selenium WebDriver BiDi</a></li>
+              <li><a class="chip" href="#selenium-bidi">Selenium Grid</a></li>
               <li><a class="chip" href="#vibium-python">Vibium</a></li>
             </ul>
           </div>
@@ -94,7 +95,7 @@
             <ul class="chips">
               <li><a class="chip" href="#how">Docker</a></li>
               <li><a class="chip" href="#how">Docker Compose</a></li>
-              <li><a class="chip" href="#playwright">Kubernetes (kind)</a></li>
+              <li><a class="chip" href="#selenium-bidi">Kubernetes (kind)</a></li>
               <li><a class="chip" href="#how">GHCR</a></li>
             </ul>
           </div>
@@ -142,7 +143,7 @@
         <ol class="flow">
           <li class="stage">
             <span class="stage-k">1 · Source</span>
-            <strong>One repo, five run scripts</strong>
+            <strong>One repo, six run scripts</strong>
             <span>ci/run-&lt;suite&gt;.sh, plus a demo web app the web suites test</span>
           </li>
           <li class="stage">
@@ -151,7 +152,7 @@
             <span>built on every push to main; Compose and kind use the same images</span>
           </li>
           <li class="stage stage-ci">
-            <span class="stage-k">3 · Five CIs</span>
+            <span class="stage-k">3 · Five CIs and Kubernetes</span>
             <ul class="ci-list" id="ci-list"></ul>
           </li>
           <li class="stage">

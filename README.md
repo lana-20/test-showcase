@@ -2,7 +2,7 @@
 
 **Live site: https://lana-20.github.io/test-showcase** · [All reports](https://lana-20.github.io/test-showcase/reports/)
 
-Five small, real test suites. Each one has its own CI, runs from one script, and publishes an Allure report with history to GitHub Pages.
+Six small, real test suites. Each one has its own CI, runs from one script, and publishes an Allure report with history to GitHub Pages.
 
 | # | Suite | Stack | Target | CI |
 |---|---|---|---|---|
@@ -11,12 +11,15 @@ Five small, real test suites. Each one has its own CI, runs from one script, and
 | 3 | Appium · Java | Java 21, JUnit 6, Appium java-client, allure-jupiter | ApiDemos on an Android 15 emulator | Jenkins (declarative Jenkinsfile in Jenkinsfile Runner) |
 | 4 | Vibium · MCP server | Python, MCP SDK, pytest-asyncio, allure-pytest | `vibium mcp` over stdio, driving the demo app | Azure Pipelines |
 | 5 | Mobium | Python, Mobium client, pytest, allure-pytest | ApiDemos on an Android 15 emulator | CircleCI |
+| 6 | Selenium WebDriver BiDi | Java 21, Selenium 4.54, JUnit 5, allure-junit5 | Demo web app on Chrome, Firefox and Edge (WebDriver BiDi) | Selenium Grid on Kubernetes (kind), from GitHub Actions |
 
 Until an external CI account is connected, that suite runs on GitHub Actions from the same script and image. The page says so ("Ran on: GitHub Actions · GitLab CI pipeline ready") and never shows a CI that did not produce the report. [SETUP.md](SETUP.md) covers connecting each account.
 
 Extra legs:
 
 - **Kubernetes (kind):** the Playwright image runs as a Job against the demo app's in-cluster Service on every run ([k8s/](k8s/)).
+  The Selenium BiDi suite runs the same way, as a Job, against a Selenium Grid (hub plus Chrome, Firefox and Edge
+  nodes) deployed in its own kind cluster.
 - **Kernel cloud browsers** (nightly): Playwright over CDP and Vibium over WebDriver BiDi, against the public copy of the demo app at `/demo/`.
 - **Firebase Test Lab** (nightly): a Robo crawl of ApiDemos on one real physical phone and one virtual device. Google is shutting Test Lab down on 2027-09-30; see SETUP.md.
 
@@ -27,7 +30,7 @@ device clouds are written up, but not applied for, in [docs/cloud-oss-programs.m
 
 ```
 suites/<suite>/          the tests (page/screen objects, fixtures, Allure steps)
-demo-app/                Tidepool: a tiny web app the three web suites test (served locally)
+demo-app/                Tidepool: a tiny web app the web suites test (served locally; /lab needs Basic auth)
 ci/run-<suite>.sh        the one entry point every CI calls
 ci/lib/status.py         writes out/status/<suite>.json (counts, time, where it ran, run URL)
 docker/                  one image per container-friendly suite, published to GHCR
@@ -35,10 +38,11 @@ Jenkinsfile              Appium Java pipeline (runs in ci/jenkins/Dockerfile)
 .gitlab-ci.yml           Vibium Python on GitLab CI
 azure-pipelines.yml      Vibium MCP on Azure Pipelines
 .circleci/config.yml     Mobium on CircleCI's Android machine image
-k8s/                     kind cluster config, demo app Deployment/Service, Playwright Job
+k8s/                     kind cluster config, demo app, Selenium Grid, and the Playwright and Selenium BiDi Jobs
 ci/fetch_external.py     downloads results from GitLab, Azure DevOps and CircleCI
 ci/build_site.py         generates one Allure report per suite (with history) and the site
 site/                    the page, the banner and the reports index
+docs/                    notes, e.g. when to choose WebDriver BiDi, CDP or Playwright
 ```
 
 Every run writes `out/allure-results/<suite>/` and `out/status/<suite>.json`. The GitHub Actions workflow
@@ -106,7 +110,41 @@ pip install -r suites/mobium/requirements.txt
 ci/run-mobium.sh
 ```
 
-### Kubernetes (kind)
+### Selenium WebDriver BiDi
+
+Needs JDK 21. Without a Grid it starts Chrome, Firefox and Edge on your machine (Selenium Manager fetches the
+drivers, and Firefox if it is missing) and serves the demo app itself:
+
+```sh
+ci/run-selenium-bidi.sh                       # all three browsers, headless
+BROWSERS=chrome,firefox HEADLESS=0 ci/run-selenium-bidi.sh
+```
+
+Against a Selenium Grid in Docker, as in CI (Edge images are amd64 only; on Apple silicon leave out `edge` and
+set `BROWSERS=chrome,firefox`):
+
+```sh
+mkdir -p out && chmod 777 out
+docker compose up -d demo-app selenium-hub chrome firefox edge
+docker compose run --rm selenium-bidi
+docker compose down
+```
+
+On kind, exactly as CI runs it (Grid manifests in [k8s/selenium-grid.yaml](k8s/selenium-grid.yaml)):
+
+```sh
+mkdir -p /tmp/k8s-out && chmod 777 /tmp/k8s-out
+kind create cluster --name showcase --config k8s/kind-config.yaml
+for img in demo-app selenium-bidi; do
+  docker pull ghcr.io/lana-20/test-showcase-$img:latest
+  docker tag ghcr.io/lana-20/test-showcase-$img:latest ghcr.io/lana-20/test-showcase-$img:ci
+done
+ci/k8s-selenium-bidi.sh                 # results in /tmp/k8s-out
+```
+
+When to pick BiDi over CDP or Playwright: [docs/bidi-cdp-playwright.md](docs/bidi-cdp-playwright.md).
+
+### Playwright on Kubernetes (kind)
 
 ```sh
 mkdir -p /tmp/k8s-out && chmod 777 /tmp/k8s-out
@@ -125,7 +163,7 @@ npx allure-commandline@2.46.2 serve out/allure-results/playwright
 ## Good practice the suites show
 
 - Page or screen objects own every locator: roles, labels, test ids and resource ids. No brittle XPath.
-- No sleeps. Playwright uses web-first assertions. Vibium uses its own actionability waits plus `wait_for_function`. Appium uses explicit `WebDriverWait`s. Mobium uses `wait_for`. The demo app adds random delays on purpose.
+- No sleeps. Playwright uses web-first assertions. Vibium uses its own actionability waits plus `wait_for_function`. Appium uses explicit `WebDriverWait`s. Mobium uses `wait_for`. Selenium BiDi waits on the browser's own events (log, network, browsing context) and `WebDriverWait`. The demo app adds random delays on purpose.
 - A fresh state for every test: a new browser context, a fresh app launch, or a direct activity start.
 - Allure steps on every action, plus a screenshot (and page source or screen map) on failure.
 - Pinned versions everywhere: npm and pip packages, Maven artifacts, Docker base images (the Jenkins runner by digest), GitHub Actions, the emulator image, and the ApiDemos and Mobium downloads (both checksum-verified).

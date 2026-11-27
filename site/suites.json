@@ -132,6 +132,24 @@
       "targetCi": "circleci",
       "image": null,
       "workflow": "showcase.yml"
+    },
+    {
+      "id": "selenium-bidi",
+      "title": "Selenium WebDriver BiDi",
+      "proves": "W3C-standard WebDriver BiDi on Chrome, Firefox and Edge: tests react to the browser's own log, network and script events, so nothing sleeps.",
+      "description": "JUnit tests drive the Tidepool demo app through a Selenium Grid that runs on Kubernetes, and every test class runs once per browser: Chrome, Firefox and Edge, in parallel. A JUnit extension listens to BiDi log events and fails any test that hits an uncaught JavaScript error or a console.error. One test injects both errors to prove the check really fails. Network interception mocks the device catalog, forces a 500 to check the error state, holds a request to check the loading state, and checks the request the app sends (its bearer token, sent once). The BiDi auth handler answers a Basic auth challenge. A preload script fixes the clock before the app's code runs. Redirects and new tabs are awaited as browsing-context events, and element and full-page screenshots are attached to Allure. Every feature works on all three browsers, so no test is skipped. No CDP and no sleeps.",
+      "tags": [
+        "Java",
+        "Selenium 4",
+        "WebDriver BiDi",
+        "Selenium Grid",
+        "Kubernetes",
+        "Chrome · Firefox · Edge",
+        "allure-junit5"
+      ],
+      "targetCi": "kubernetes",
+      "image": "ghcr.io/lana-20/test-showcase-selenium-bidi",
+      "workflow": "showcase.yml"
     }
   ]
 }

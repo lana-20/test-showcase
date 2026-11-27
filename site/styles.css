@@ -18,12 +18,13 @@
   --radius: 14px;
   --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
 
-  /* One accent per suite, so the five cards are easy to tell apart. */
+  /* One accent per suite, so the cards are easy to tell apart. */
   --a-playwright: #1f7a3a;
   --a-vibium-python: #6b3fc7;
   --a-appium-java: #a85300;
   --a-vibium-mcp: #0b62c0;
   --a-mobium: #b02a63;
+  --a-selenium-bidi: #0f766e;
   color-scheme: light;
 }
 
@@ -49,6 +50,7 @@
     --a-appium-java: #ffad5c;
     --a-vibium-mcp: #6db6ff;
     --a-mobium: #ff8cbd;
+    --a-selenium-bidi: #4fd1c1;
     color-scheme: dark;
   }
 }
@@ -56,7 +58,7 @@
   --bg: #0f1216; --surface: #161a20; --surface-2: #1d222a; --fg: #e9edf2; --fg-2: #c3cad3; --muted: #9aa5b2;
   --line: #2b323c; --link: #79b8ff; --pass: #5fd27f; --fail: #ff8a7a; --skip: #f0c060; --hero-bg: #0d1a26;
   --hero-ink: #d7e9fb; --wave-ink: 160, 205, 245; --shadow: 0 1px 2px rgba(0, 0, 0, .4);
-  --a-playwright: #5cd17c; --a-vibium-python: #b79dff; --a-appium-java: #ffad5c; --a-vibium-mcp: #6db6ff; --a-mobium: #ff8cbd;
+  --a-playwright: #5cd17c; --a-vibium-python: #b79dff; --a-appium-java: #ffad5c; --a-vibium-mcp: #6db6ff; --a-mobium: #ff8cbd; --a-selenium-bidi: #4fd1c1;
   color-scheme: dark;
 }
 

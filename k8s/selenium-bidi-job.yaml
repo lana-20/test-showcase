@@ -1,0 +1,49 @@
+# The Selenium BiDi suite as a one-shot Job. It runs inside the cluster, so
+# the hub, the BiDi WebSocket and the demo app are all plain Service names.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: selenium-bidi
+  namespace: showcase
+spec:
+  backoffLimit: 0                 # a failed run is a result, not something to retry
+  activeDeadlineSeconds: 1200
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001           # the image's "tester" user
+      containers:
+        - name: selenium-bidi
+          image: ghcr.io/lana-20/test-showcase-selenium-bidi:ci
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SELENIUM_REMOTE_URL
+              value: http://selenium-hub:4444
+            - name: DEMO_URL
+              value: http://demo-app/   # resolved by the browser nodes through cluster DNS
+            - name: BROWSERS
+              value: chrome,firefox,edge
+            - name: OUT_DIR
+              value: /out
+            - name: RAN_ON_ID
+              value: kubernetes
+            - name: RAN_ON_NAME
+              value: Selenium Grid on Kubernetes (kind) via GitHub Actions
+            - name: RAN_ON_URL
+              valueFrom:
+                configMapKeyRef: { name: run-info, key: run-url }
+            - name: GITHUB_SHA
+              valueFrom:
+                configMapKeyRef: { name: run-info, key: commit }
+          volumeMounts:
+            - name: out
+              mountPath: /out
+          resources:
+            requests: { cpu: 500m, memory: 1Gi }
+      volumes:
+        # The kind node's /out, which is the runner's /tmp/k8s-out (see kind-config.yaml).
+        - name: out
+          hostPath: { path: /out, type: DirectoryOrCreate }

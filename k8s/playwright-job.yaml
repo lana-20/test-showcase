@@ -29,6 +29,9 @@ spec:
             - name: HOST_RUN_URL
               valueFrom:
                 configMapKeyRef: { name: run-info, key: run-url }
+            - name: GITHUB_SHA
+              valueFrom:
+                configMapKeyRef: { name: run-info, key: commit }
           volumeMounts:
             - name: out
               mountPath: /out
