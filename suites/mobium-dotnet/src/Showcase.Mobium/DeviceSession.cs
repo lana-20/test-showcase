@@ -93,6 +93,8 @@ public sealed class DeviceSession : IDisposable
 
     public string Text() => Step("Text", () => Device.Text());
 
+    public string Text(string target) => Step("Text", () => Device.Text(target), target);
+
     public byte[] Screenshot() => Step("Screenshot", () => Device.Screenshot());
 
     public IList<DeviceInfo> Devices() => Step("Devices", () => Device.Devices());

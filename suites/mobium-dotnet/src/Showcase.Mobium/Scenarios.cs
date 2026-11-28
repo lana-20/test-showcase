@@ -47,14 +47,22 @@ public static class Scenarios
     public static Element OpenCategory(DeviceSession s, string category, string expectedRow) =>
         s.LaunchFresh().Open(category).Expect(expectedRow);
 
-    /// <summary>Fills the field twice and returns it after the second fill: fill replaces, it does not append.</summary>
-    public static Element FillReplacesValue(DeviceSession s, string text)
+    /// <summary>
+    /// Fills the field twice and returns its text after the second fill, read
+    /// back from the device: fill replaces, it does not append. (Each fill has
+    /// already waited for Until.Value; Element.Value is a slider's value, so the
+    /// text is read with Text(target).)
+    /// </summary>
+    public static string FillReplacesValue(DeviceSession s, string text)
     {
         s.LaunchFresh();
         var controls = ControlsScreen.Open(s);
-        controls.Fill("placeholder text");
-        return controls.Fill(text);
+        controls.Fill(FirstFill);
+        controls.Fill(text);
+        return s.Text(ControlsScreen.Edit);
     }
+
+    public const string FirstFill = "placeholder text";
 
     public static CheckboxStates SetAndUnsetCheckbox(DeviceSession s)
     {

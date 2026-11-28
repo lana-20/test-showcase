@@ -12,9 +12,10 @@ public sealed class ControlsTests : MobiumTest
     [DataRow("and replaced it")]
     public void Fill_replaces_the_field_value(string text) => Run(() =>
     {
-        var field = Scenarios.FillReplacesValue(Device, text);
+        var shown = Scenarios.FillReplacesValue(Device, text);
 
-        Assert.AreEqual(text, field.Value);
+        StringAssert.Contains(shown, text);
+        Assert.IsFalse(shown.Contains(Scenarios.FirstFill), $"the first fill is still there: {shown}");
     }, text);
 
     [TestMethod]

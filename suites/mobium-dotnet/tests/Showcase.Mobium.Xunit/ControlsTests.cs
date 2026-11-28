@@ -11,9 +11,10 @@ public sealed class ControlsTests(DeviceFixture fixture) : MobiumTest(fixture)
     [InlineData("and replaced it")]
     public void Fill_replaces_the_field_value(string text) => Run(() =>
     {
-        var field = Scenarios.FillReplacesValue(Device, text);
+        var shown = Scenarios.FillReplacesValue(Device, text);
 
-        Assert.Equal(text, field.Value);
+        Assert.Contains(text, shown);
+        Assert.DoesNotContain(Scenarios.FirstFill, shown);
     });
 
     [Fact]

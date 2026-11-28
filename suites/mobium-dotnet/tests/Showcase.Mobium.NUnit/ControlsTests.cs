@@ -10,9 +10,9 @@ public sealed class ControlsTests : MobiumTest
     [TestCase("and replaced it")]
     public void Fill_replaces_the_field_value(string text)
     {
-        var field = Scenarios.FillReplacesValue(Device, text);
+        var shown = Scenarios.FillReplacesValue(Device, text);
 
-        Assert.That(field.Value, Is.EqualTo(text));
+        Assert.That(shown, Does.Contain(text).And.Not.Contain(Scenarios.FirstFill));
     }
 
     [Test]
