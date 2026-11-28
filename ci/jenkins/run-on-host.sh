@@ -7,6 +7,11 @@ REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO"
 mkdir -p out && chmod 777 out
 adb devices
+# A cold-booted CI emulator often raises "Pixel Launcher isn't responding", and
+# the dialog covers the app under test. Hide system error and ANR dialogs (the
+# system then closes a stalled app instead of asking), and dismiss any already up.
+adb shell settings put global hide_error_dialogs 1 || true
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null || true
 nohup appium --address 127.0.0.1 --port 4723 --log-no-colors --log out/appium.log >/dev/null 2>&1 &
 for _ in $(seq 1 60); do curl -fsS http://127.0.0.1:4723/status >/dev/null 2>&1 && break; sleep 1; done
 curl -fsS http://127.0.0.1:4723/status
