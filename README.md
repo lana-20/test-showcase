@@ -8,10 +8,10 @@ Seven small, real test suites. Each one has its own CI, runs from one script, an
 |---|---|---|---|---|
 | 1 | Playwright | TypeScript, `@playwright/test`, allure-playwright | Demo web app (Chromium) | GitHub Actions, plus a Kubernetes Job on kind |
 | 2 | Vibium · Python client | Python, pytest, `vibium`, allure-pytest | Demo web app (Chrome over WebDriver BiDi) | GitLab CI |
-| 3 | Appium · Java | Java 21, JUnit 6, Appium java-client, allure-jupiter | ApiDemos on an Android 15 emulator | Jenkins (declarative Jenkinsfile in Jenkinsfile Runner) |
+| 3 | Appium · Java | Java 21, JUnit 6, Appium java-client, allure-jupiter, Gradle (Kotlin DSL) | ApiDemos on an Android 15 emulator | Jenkins (declarative Jenkinsfile in Jenkinsfile Runner) |
 | 4 | Vibium · MCP server | Python, MCP SDK, pytest-asyncio, allure-pytest | `vibium mcp` over stdio, driving the demo app | Azure Pipelines |
 | 5 | Mobium | Python, Mobium client, pytest, allure-pytest | ApiDemos on an Android 15 emulator | CircleCI |
-| 6 | Selenium WebDriver BiDi | Java 21, Selenium 4.54, JUnit 5, allure-junit5 | Demo web app on Chrome, Firefox and Edge (WebDriver BiDi) | Selenium Grid on Kubernetes (kind), from GitHub Actions |
+| 6 | Selenium WebDriver BiDi | Java 21, Selenium 4.54, JUnit 5, allure-junit5, Maven | Demo web app on Chrome, Firefox and Edge (WebDriver BiDi) | Selenium Grid on Kubernetes (kind), from GitHub Actions |
 | 7 | Mobium · C# (.NET) | C#, .NET 10, Mobium .NET client, NUnit, xUnit and MSTest, Allure | ApiDemos on an Android 15 emulator | GitHub Actions (all three runners in one job) |
 
 Until an external CI account is connected, that suite runs on GitHub Actions from the same script and image. The page says so ("Ran on: GitHub Actions · GitLab CI pipeline ready") and never shows a CI that did not produce the report. [SETUP.md](SETUP.md) covers connecting each account.
@@ -91,15 +91,20 @@ used, not a local development build.
 
 ### Appium Java
 
-Needs JDK 21, an Android emulator or device (`adb devices`), and Appium:
+Needs JDK 21, an Android emulator or device (`adb devices`), and Appium. The build is Gradle (Kotlin DSL,
+`suites/appium-java/build.gradle.kts`, versions in `gradle/libs.versions.toml`); the Gradle Wrapper downloads
+the pinned Gradle and checks its SHA-256, so no local Gradle install is needed:
 
 ```sh
 npm install -g appium@4.0.1 && appium driver install uiautomator2@10.4.0
 appium &                                # http://127.0.0.1:4723
-ci/run-appium-java.sh                   # downloads ApiDemos v6.0.18 and checks its SHA-256
+ci/run-appium-java.sh                   # downloads ApiDemos v6.0.18 and checks its SHA-256, then ./gradlew test
 ```
 
+Single test: `cd suites/appium-java && ./gradlew test --tests '*DialogsTest'`.
+
 To run it as CI does, through Jenkins: `JENKINS_IMAGE=ghcr.io/lana-20/test-showcase-jenkins-runner:latest ci/jenkins/run-on-host.sh`.
+The Jenkins runner image already holds Gradle and every test dependency, so the pipeline's `./gradlew test --no-daemon` downloads nothing.
 
 ### Mobium
 
@@ -122,7 +127,7 @@ ci/run-mobium-dotnet.sh                 # fetches the Mobium .NET client at the 
 
 ### Selenium WebDriver BiDi
 
-Needs JDK 21. Without a Grid it starts Chrome, Firefox and Edge on your machine (Selenium Manager fetches the
+Needs JDK 21. The build is Maven, through the Maven Wrapper (`./mvnw`). Without a Grid it starts Chrome, Firefox and Edge on your machine (Selenium Manager fetches the
 drivers, and Firefox if it is missing) and serves the demo app itself:
 
 ```sh
@@ -176,7 +181,7 @@ npx allure-commandline@2.46.2 serve out/allure-results/playwright
 - No sleeps. Playwright uses web-first assertions. Vibium uses its own actionability waits plus `wait_for_function`. Appium uses explicit `WebDriverWait`s. Mobium uses `wait_for`. Selenium BiDi waits on the browser's own events (log, network, browsing context) and `WebDriverWait`. The demo app adds random delays on purpose.
 - A fresh state for every test: a new browser context, a fresh app launch, or a direct activity start.
 - Allure steps on every action, plus a screenshot (and page source or screen map) on failure.
-- Pinned versions everywhere: npm and pip packages, Maven artifacts, Docker base images (the Jenkins runner by digest), GitHub Actions, the emulator image, and the ApiDemos and Mobium downloads (both checksum-verified).
+- Pinned versions everywhere: npm and pip packages, Maven and Gradle artifacts, the Maven and Gradle Wrappers (Gradle's distribution checksum-verified), Docker base images (the Jenkins runner by digest), GitHub Actions, the emulator image, and the ApiDemos and Mobium downloads (both checksum-verified).
 - No retries, so a flaky test shows up as flaky.
 
 ## License

@@ -83,12 +83,13 @@
       "id": "appium-java",
       "title": "Appium · Java",
       "proves": "Native Android UI automation in Java on an emulator, run by a real Jenkins pipeline.",
-      "description": "JUnit tests drive Appium's ApiDemos app on an Android 15 emulator through the UiAutomator2 driver. They cover list navigation with UiScrollable, text input, checkboxes, radio groups, toggles, disabled state, alert dialogs and an appending log view. Screen objects use resource ids and explicit WebDriverWaits, and each test opens its screen directly with mobile: startActivity. A JUnit extension owns the session and attaches a screenshot and the page source on failure. The declarative Jenkinsfile runs in Jenkinsfile Runner, a throwaway Jenkins, while the emulator and the Appium server run on the host.",
+      "description": "JUnit tests drive Appium's ApiDemos app on an Android 15 emulator through the UiAutomator2 driver. They cover list navigation with UiScrollable, text input, checkboxes, radio groups, toggles, disabled state, alert dialogs and an appending log view. Screen objects use resource ids and explicit WebDriverWaits, and each test opens its screen directly with mobile: startActivity. A JUnit extension owns the session and attaches a screenshot and the page source on failure. The build is Gradle with the Kotlin DSL. The declarative Jenkinsfile runs in Jenkinsfile Runner, a throwaway Jenkins, and calls ./gradlew test through the Gradle Wrapper, with Gradle and every dependency already baked into its image. The emulator and the Appium server run on the host.",
       "tags": [
         "Java 21",
         "JUnit 6 + Appium java-client",
         "Android emulator · API 35",
-        "allure-jupiter"
+        "allure-jupiter",
+        "Gradle (Kotlin DSL)"
       ],
       "targetCi": "jenkins",
       "image": "ghcr.io/lana-20/test-showcase-jenkins-runner",
@@ -137,7 +138,7 @@
       "id": "selenium-bidi",
       "title": "Selenium WebDriver BiDi",
       "proves": "W3C-standard WebDriver BiDi on Chrome, Firefox and Edge: tests react to the browser's own log, network and script events, so nothing sleeps.",
-      "description": "JUnit tests drive the Tidepool demo app through a Selenium Grid that runs on Kubernetes, and every test class runs once per browser: Chrome, Firefox and Edge, in parallel. A JUnit extension listens to BiDi log events and fails any test that hits an uncaught JavaScript error or a console.error. One test injects both errors to prove the check really fails. Network interception mocks the device catalog, forces a 500 to check the error state, holds a request to check the loading state, and checks the request the app sends (its bearer token, sent once). The BiDi auth handler answers a Basic auth challenge. A preload script fixes the clock before the app's code runs. Redirects and new tabs are awaited as browsing-context events, and element and full-page screenshots are attached to Allure. Every feature works on all three browsers, so no test is skipped. No CDP and no sleeps.",
+      "description": "JUnit tests drive the Tidepool demo app through a Selenium Grid that runs on Kubernetes, and every test class runs once per browser: Chrome, Firefox and Edge, in parallel. A JUnit extension listens to BiDi log events and fails any test that hits an uncaught JavaScript error or a console.error. One test injects both errors to prove the check really fails. Network interception mocks the device catalog, forces a 500 to check the error state, holds a request to check the loading state, and checks the request the app sends (its bearer token, sent once). The BiDi auth handler answers a Basic auth challenge. A preload script fixes the clock before the app's code runs. Redirects and new tabs are awaited as browsing-context events, and element and full-page screenshots are attached to Allure. Every feature works on all three browsers, so no test is skipped. No CDP and no sleeps. The build is Maven, run through the Maven Wrapper, and the suite's Docker image runs dependency:go-offline at build time, so a test run downloads no dependencies.",
       "tags": [
         "Java",
         "Selenium 4",
@@ -145,7 +146,8 @@
         "Selenium Grid",
         "Kubernetes",
         "Chrome · Firefox · Edge",
-        "allure-junit5"
+        "allure-junit5",
+        "Maven"
       ],
       "targetCi": "kubernetes",
       "image": "ghcr.io/lana-20/test-showcase-selenium-bidi",
