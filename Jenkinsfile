@@ -22,8 +22,9 @@ pipeline {
         stage('Appium Java tests') {
             steps {
                 dir(env.REPO_DIR) {
-                    // The run script writes allure-results and the status JSON
-                    // and exits non-zero on test failures.
+                    // The run script calls `./gradlew test --no-daemon` with the
+                    // Allure results dir, writes the status JSON, and exits with
+                    // Gradle's exit code, so a failed test fails this stage.
                     sh 'ci/run-appium-java.sh'
                 }
             }

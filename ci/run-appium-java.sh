@@ -8,7 +8,9 @@ export APP_PATH="${APP_PATH:-$REPO/apps/ApiDemos-debug.apk}"
 [ -f "$APP_PATH" ] || "$REPO/ci/android/fetch-apk.sh"
 log "Running Appium Java suite"
 set +e
-./mvnw -B -ntp test -Dallure.results.directory="$RESULTS"
+# Gradle Wrapper: the pinned Gradle (checksum-verified) and, in the Jenkins
+# runner image, every dependency are already in GRADLE_USER_HOME.
+./gradlew test --no-daemon --console=plain -Dallure.results.directory="$RESULTS"
 code=$?
 set -e
 finish $code

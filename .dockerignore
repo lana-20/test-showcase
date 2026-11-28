@@ -11,3 +11,5 @@ out
 _site
 apps
 .git
+suites/appium-java/build
+suites/appium-java/.gradle

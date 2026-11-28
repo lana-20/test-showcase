@@ -230,10 +230,8 @@ jobs:
         run: ci/android/fetch-apk.sh
       - name: Pull the Jenkins runner image
         run: docker pull "$REGISTRY/test-showcase-jenkins-runner:$TAG"
-      - uses: actions/cache@v6.1.0
-        with:
-          path: ~/.m2/repository
-          key: m2-${{ hashFiles('suites/appium-java/pom.xml') }}
+      # No dependency cache step: the runner image already holds Gradle 9.9.3 and
+      # every test dependency (ci/jenkins/Dockerfile), so the run is offline-friendly.
       - name: Boot the emulator, start Appium, run the Jenkinsfile
         uses: ReactiveCircus/android-emulator-runner@v2.38.0
         env:
@@ -250,7 +248,7 @@ jobs:
           script: bash ci/jenkins/run-on-host.sh
       - name: Make results readable (Jenkins ran as root)
         if: always()
-        run: sudo chown -R "$(id -u):$(id -g)" out ~/.m2 suites/appium-java || true
+        run: sudo chown -R "$(id -u):$(id -g)" out suites/appium-java || true
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with: { name: results-appium-java, path: out/, if-no-files-found: warn, retention-days: 14 }
