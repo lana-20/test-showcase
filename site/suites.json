@@ -150,6 +150,25 @@
       "targetCi": "kubernetes",
       "image": "ghcr.io/lana-20/test-showcase-selenium-bidi",
       "workflow": "showcase.yml"
+    },
+    {
+      "id": "mobium-dotnet",
+      "title": "Mobium · C# (.NET)",
+      "proves": "The same device tests under NUnit, xUnit and MSTest, with shared scenarios, runner-native fixtures and data-driven tests.",
+      "description": "C# tests drive ApiDemos on an Android 15 emulator through Mobium's .NET client, built from the same pinned v0.1.0-rc1 release as the binary. One shared library holds the screen objects, the device session helper and ten scenarios as plain methods. Three test projects call those scenarios, so the runner is the only difference: NUnit with a [SetUpFixture], [TestCase] and [TestCaseSource], and constraint asserts; xUnit with a collection fixture, IAsyncLifetime, [Theory] with [InlineData] and [MemberData], and parallel runs turned off for the single device; MSTest with [AssemblyInitialize], [DataRow] and [DynamicData]. The scenarios wait with Mobium's WaitFor and never sleep. A failing test gets a screenshot and the screen map. All three result sets are merged into one Allure report, grouped by runner.",
+      "tags": [
+        "C#",
+        ".NET 10",
+        "NUnit",
+        "xUnit",
+        "MSTest",
+        "Mobium .NET client",
+        "Android emulator · API 35",
+        "Allure"
+      ],
+      "targetCi": "github-actions",
+      "image": null,
+      "workflow": "showcase.yml"
     }
   ]
 }

@@ -1,0 +1,13 @@
+<Project>
+  <!-- Shared by the scenario library and the three test projects. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- The Mobium client source, checked out by fetch-client.sh. -->
+    <MobiumClientProject>$(MSBuildThisFileDirectory).mobium-src/clients/dotnet/Mobium/Mobium.csproj</MobiumClientProject>
+  </PropertyGroup>
+</Project>

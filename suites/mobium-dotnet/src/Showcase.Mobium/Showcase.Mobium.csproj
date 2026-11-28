@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- What the three test projects share: the device fixture helper, screen
+       objects and the scenarios. No test framework is referenced here, so the
+       runner is the only thing that differs between the three projects. -->
+  <PropertyGroup>
+    <RootNamespace>Showcase.Mobium</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(MobiumClientProject)" />
+    <PackageReference Include="Allure.Net.Commons" />
+  </ItemGroup>
+</Project>

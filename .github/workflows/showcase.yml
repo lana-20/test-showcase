@@ -8,6 +8,7 @@
 #   Appium Java     Jenkins          (Jenkinsfile Runner inside this workflow)
 #   Vibium MCP      Azure Pipelines  when vars.VIBIUM_MCP_CI == 'azure-pipelines'
 #   Mobium          CircleCI         when vars.MOBIUM_CI == 'circleci'
+#   Mobium .NET     GitHub Actions   (NUnit, xUnit and MSTest in turn on one emulator)
 #   Selenium BiDi   Selenium Grid on Kubernetes (kind), in this workflow
 # Until then, the suite runs here, from the same script and image, and the
 # page says so.
@@ -285,6 +286,42 @@ jobs:
         if: always()
         with: { name: results-mobium, path: out/, if-no-files-found: warn, retention-days: 14 }
 
+  mobium-dotnet:
+    name: Mobium · C# (.NET) · NUnit, xUnit and MSTest
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Enable KVM
+        run: ci/android/enable-kvm.sh
+      - uses: actions/setup-dotnet@v6.1.0
+        with: { global-json-file: suites/mobium-dotnet/global.json }
+      - uses: actions/cache@v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('suites/mobium-dotnet/Directory.Packages.props', 'suites/mobium-dotnet/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - name: Install Mobium (pinned release), fetch its .NET client and ApiDemos, build
+        run: |
+          ci/android/install-mobium.sh
+          ci/android/fetch-apk.sh
+          suites/mobium-dotnet/fetch-client.sh
+          dotnet build suites/mobium-dotnet/MobiumDotnet.sln -c Release
+      - name: Boot the emulator and run NUnit, xUnit and MSTest in turn
+        uses: ReactiveCircus/android-emulator-runner@v2.38.0
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disk-size: 6000M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash ci/run-mobium-dotnet.sh
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with: { name: results-mobium-dotnet, path: out/, if-no-files-found: warn, retention-days: 14 }
+
   # ---------- Cloud legs: nightly or on demand only, and only once Lana's accounts exist ----------
   kernel:
     name: Kernel cloud browser · Playwright and Vibium
@@ -388,7 +425,7 @@ jobs:
   # ---------- Reports and Pages ----------
   report:
     name: Allure reports and site
-    needs: [playwright, vibium-python, vibium-mcp, kubernetes, selenium-bidi, appium-jenkins, mobium, kernel, firebase-robo]
+    needs: [playwright, vibium-python, vibium-mcp, kubernetes, selenium-bidi, appium-jenkins, mobium, mobium-dotnet, kernel, firebase-robo]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20

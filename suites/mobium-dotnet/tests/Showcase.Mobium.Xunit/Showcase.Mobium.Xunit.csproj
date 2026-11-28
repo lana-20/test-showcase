@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <RunSettingsFilePath>$(MSBuildProjectDirectory)/xunit.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Showcase.Mobium/Showcase.Mobium.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <!-- xUnit v2, and its 2.8 VSTest adapter: Allure.Xunit 2.15 is a v2 runner
+         reporter, which the 3.x adapter does not load. xUnit v3 has no stable
+         Allure adapter yet. -->
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Allure.Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -2,7 +2,7 @@
 
 **Live site: https://lana-20.github.io/test-showcase** · [All reports](https://lana-20.github.io/test-showcase/reports/)
 
-Six small, real test suites. Each one has its own CI, runs from one script, and publishes an Allure report with history to GitHub Pages.
+Seven small, real test suites. Each one has its own CI, runs from one script, and publishes an Allure report with history to GitHub Pages.
 
 | # | Suite | Stack | Target | CI |
 |---|---|---|---|---|
@@ -12,6 +12,7 @@ Six small, real test suites. Each one has its own CI, runs from one script, and 
 | 4 | Vibium · MCP server | Python, MCP SDK, pytest-asyncio, allure-pytest | `vibium mcp` over stdio, driving the demo app | Azure Pipelines |
 | 5 | Mobium | Python, Mobium client, pytest, allure-pytest | ApiDemos on an Android 15 emulator | CircleCI |
 | 6 | Selenium WebDriver BiDi | Java 21, Selenium 4.54, JUnit 5, allure-junit5 | Demo web app on Chrome, Firefox and Edge (WebDriver BiDi) | Selenium Grid on Kubernetes (kind), from GitHub Actions |
+| 7 | Mobium · C# (.NET) | C#, .NET 10, Mobium .NET client, NUnit, xUnit and MSTest, Allure | ApiDemos on an Android 15 emulator | GitHub Actions (all three runners in one job) |
 
 Until an external CI account is connected, that suite runs on GitHub Actions from the same script and image. The page says so ("Ran on: GitHub Actions · GitLab CI pipeline ready") and never shows a CI that did not produce the report. [SETUP.md](SETUP.md) covers connecting each account.
 
@@ -108,6 +109,15 @@ Needs an Android emulator or device and Python 3.9+:
 ci/android/install-mobium.sh            # pinned v0.1.0-rc1 release, checksum-verified
 pip install -r suites/mobium/requirements.txt
 ci/run-mobium.sh
+```
+
+### Mobium · C# (.NET)
+
+The same scenarios under NUnit, xUnit and MSTest, one runner after the other. Needs the .NET 10 SDK, an
+Android emulator or device, and Mobium (see above). Runner comparison: [suites/mobium-dotnet](suites/mobium-dotnet/README.md).
+
+```sh
+ci/run-mobium-dotnet.sh                 # fetches the Mobium .NET client at the pinned tag, builds, runs all three
 ```
 
 ### Selenium WebDriver BiDi

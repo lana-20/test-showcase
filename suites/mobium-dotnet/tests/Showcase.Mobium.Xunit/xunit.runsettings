@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- xUnit.net v2 picks one runner reporter. Name Allure's, so a CI-specific
+     reporter that happens to be enabled by the environment never wins. -->
+<RunSettings>
+  <xUnit>
+    <ReporterSwitch>allure</ReporterSwitch>
+  </xUnit>
+</RunSettings>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Showcase.Mobium/Showcase.Mobium.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="MSTest.TestFramework" />
+    <PackageReference Include="MSTest.TestAdapter" />
+    <!-- allure-csharp has no MSTest adapter, so AllureMSTest.cs writes the
+         results through Allure.Net.Commons, the library the NUnit and xUnit
+         adapters are built on. -->
+    <PackageReference Include="Allure.Net.Commons" />
+  </ItemGroup>
+</Project>
