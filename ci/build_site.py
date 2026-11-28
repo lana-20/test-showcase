@@ -126,6 +126,15 @@ def main() -> int:
     if args.out.exists():
         shutil.rmtree(args.out)
     shutil.copytree(REPO / "site", args.out)
+    # Stamp the CSS and JS links with this build's commit. suites.json and the
+    # status files are fetched with no-store, but browsers cache styles.css and
+    # app.js, so a new card could render with an old stylesheet that lacks it.
+    version = (os.environ.get("GITHUB_SHA") or "dev")[:12]
+    index = args.out / "index.html"
+    page = index.read_text(encoding="utf-8")
+    for asset in ("styles.css", "hero.js", "app.js"):
+        page = page.replace(f'"{asset}"', f'"{asset}?v={version}"')
+    index.write_text(page, encoding="utf-8")
     config = json.loads((REPO / "site" / "suites.json").read_text(encoding="utf-8"))
     status_out = args.out / "data" / "status"
     status_out.mkdir(parents=True, exist_ok=True)
