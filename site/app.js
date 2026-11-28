@@ -153,7 +153,8 @@
       const where = ranOn(status, suite, config.ci);
       const card = tpl.content.firstElementChild.cloneNode(true);
       card.id = suite.id;
-      card.style.setProperty("--accent", `var(--a-${suite.id})`);
+      // Fall back to the link color so a suite without its own accent still shows its button.
+      card.style.setProperty("--accent", `var(--a-${suite.id}, var(--link))`);
       card.setAttribute("aria-labelledby", `${suite.id}-title`);
       card.querySelector(".suite-index").textContent = String(i + 1);
       const title = card.querySelector(".suite-title");
@@ -192,7 +193,7 @@
       const target = config.ci[suite.targetCi]?.name ?? suite.targetCi;
       const li = el("li", {}, el("b", { text: target }),
         el("span", { text: where.onTarget ? `${suite.title}` : `${suite.title} (ready; runs on ${where.short ?? "GitHub Actions"} for now)` }));
-      li.style.setProperty("--accent", `var(--a-${suite.id})`);
+      li.style.setProperty("--accent", `var(--a-${suite.id}, var(--link))`);
       ciList.append(li);
     });
     if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
