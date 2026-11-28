@@ -8,6 +8,7 @@ cd "$SUITE_DIR"
 export APP_PATH="${APP_PATH:-$REPO/apps/ApiDemos-debug.apk}"
 [ -f "$APP_PATH" ] || "$REPO/ci/android/fetch-apk.sh"
 command -v mobium >/dev/null || "$REPO/ci/android/install-mobium.sh"
+"$REPO/ci/android/quiet-system-dialogs.sh"   # no launcher ANR dialog over the app
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
 
 log "Mobium .NET client source"

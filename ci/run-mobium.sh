@@ -6,6 +6,7 @@ cd "$SUITE_DIR"
 export APP_PATH="${APP_PATH:-$REPO/apps/ApiDemos-debug.apk}"
 [ -f "$APP_PATH" ] || "$REPO/ci/android/fetch-apk.sh"
 command -v mobium >/dev/null || "$REPO/ci/android/install-mobium.sh"
+"$REPO/ci/android/quiet-system-dialogs.sh"   # no launcher ANR dialog over the app
 PY="${PYTHON:-python3}"
 "$PY" -c "import mobium" 2>/dev/null || "$PY" -m pip install -q -r requirements.txt
 log "mobium doctor"
