@@ -35,6 +35,10 @@ every check is a `WaitFor` with an `Until` condition.
 
 On failure, each runner attaches a screenshot and the screen map (`Map()`) to the Allure test.
 
+The session declares one dialog rule (`AddDialogRule("responding", "Wait")`). CI emulators sometimes raise a
+system "isn't responding" dialog over the app, and Mobium's actions and waits answer it where it appears,
+instead of the test failing or being retried.
+
 ## How the runners compare
 
 | | NUnit | xUnit | MSTest |

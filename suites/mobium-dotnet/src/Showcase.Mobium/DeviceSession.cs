@@ -45,6 +45,14 @@ public sealed class DeviceSession : IDisposable
         var device = builder.Start();
         try
         {
+            // A CI emulator sometimes raises "System UI isn't responding" over
+            // the app (an ANR dialog with Close app and Wait). With this rule,
+            // any Mobium action or wait that meets it presses Wait and carries
+            // on. No test is retried: the dialog is answered where it appears.
+            // "responding" alone, because newer Android writes "isn’t" with a
+            // typographic apostrophe.
+            device.ClearDialogRules();
+            device.AddDialogRule("responding", "Wait");
             device.Install(apk);
         }
         catch
