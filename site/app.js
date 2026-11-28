@@ -66,9 +66,10 @@
       box.append(el("span", { class: "badge unknown", text: "No run yet" }));
       return box;
     }
-    const label = { passed: "Passing", failed: "Failing", error: "No results" }[status.outcome] ?? status.outcome;
+    const errorLabel = status.total ? "Run failed" : "No results";
+    const label = { passed: "Passing", failed: "Failing", error: errorLabel }[status.outcome] ?? status.outcome;
     box.append(
-      el("span", { class: `badge ${status.outcome}`, text: label }),
+      el("span", { class: `badge ${status.outcome}`, text: label, title: status.reason || "" }),
       el("span", { class: "count pass", text: `${status.passed} passed` }),
       el("span", { class: "count fail", text: `${status.failed + (status.broken || 0)} failed` }),
       el("span", { class: "count skip", text: `${status.skipped} skipped` }),

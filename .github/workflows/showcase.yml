@@ -431,7 +431,7 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-      actions: read     # to reuse the last nightly cloud results on other runs
+      actions: write    # read: reuse the last nightly cloud results; write: remove an earlier attempt's Pages artifact
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/download-artifact@v8.0.2
@@ -467,6 +467,18 @@ jobs:
         if: always()
         run: python3 ci/summary.py collected/status >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/configure-pages@v6.0.0
+      # "Re-run failed jobs" keeps the first attempt's artifacts, and deploy-pages
+      # refuses to choose between two named github-pages. Remove the old one first.
+      - name: Remove a github-pages artifact left by an earlier attempt
+        if: github.run_attempt > 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts?name=github-pages" \
+            --jq '.artifacts[].id' | while read -r id; do
+            echo "Deleting artifact $id from an earlier attempt"
+            gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id"
+          done
       - uses: actions/upload-pages-artifact@v5.0.0
         with: { path: _site }
 

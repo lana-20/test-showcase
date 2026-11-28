@@ -85,16 +85,25 @@ def main() -> int:
     args = ap.parse_args()
 
     totals = count(args.results) if args.results.is_dir() else count(pathlib.Path("/nonexistent"))
+    reason = None
     if totals["total"] == 0:
         outcome = "error"  # the suite produced no results at all: setup failed
+        reason = "The suite produced no test results."
     elif totals["failed"] or totals["broken"]:
         outcome = "failed"
+    elif args.exit_code != 0:
+        # Every recorded test passed, yet the run failed: something outside the
+        # tests broke (setup, a test class that never started, a crash). Never
+        # report that as passing, because the results we have are incomplete.
+        outcome = "error"
+        reason = f"The run exited with code {args.exit_code} although every recorded test passed; results are incomplete."
     else:
         outcome = "passed"
     status = {
         "suite": args.suite,
         "outcome": outcome,
         "exit_code": args.exit_code,
+        "reason": reason,
         **totals,
         "finished_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "ran_on": detect_ci(),
